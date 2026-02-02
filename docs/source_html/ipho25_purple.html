@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>International Physics Olympiad 2025 (IPhO 2025)</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding: 24px;
+      height: 100vh; /* fill iframe viewport height */
+      box-sizing: border-box;
+      height: auto;
+      align-items: center;
+    }
+    .title {
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: 0.2px;
+      text-align: center;
+    }
+    #chart {
+      width: 100%;
+      aspect-ratio: 3 / 1;
+      width: 1200px;
+      height: 400px;
+      background: transparent;
+      border-radius: 8px;
+    }
+    .desc {
+      opacity: 0.8;
+      font-size: 13px;
+    }
+    a { color: #b39ddb; }
+    /* legend styles */
+    .legend {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 22px;
+      opacity: 0.9;
+    }
+    .legend-swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+    }
+  </style>
+  <!-- ECharts CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <div class="title">International Physics Olympiad 2025 (IPhO 2025)</div>
+    <div id="legend" class="legend"></div>
+    <div id="chart"></div>
+  </div>
+
+  <script>
+    // Theme detection - store theme received from parent
+    let currentTheme = 'dark'; // Default to dark
+    
+    function getTheme() {
+      return currentTheme;
+    }
+    
+    function setTheme(theme) {
+      currentTheme = theme;
+      console.log('IPhO Chart - Theme set to:', theme);
+    }
+    
+    function isLightTheme() {
+      return currentTheme === 'light';
+    }
+    
+    // Theme-aware colors
+    function getThemeColors() {
+      const isLight = isLightTheme();
+      return {
+        purpleMain: '#BA8FFF',
+        purpleLight: '#B39DDB',
+        grayDark: isLight ? '#6B7280' : '#4a5057',
+        grayMid: isLight ? '#6B7280' : '#4a5057',
+        grayDeep: isLight ? '#9CA3AF' : '#5a5e62',
+        goldColor: '#666a6e',
+        silverColor: '#C0C0C0',
+        bronzeColor: '#666a6e',
+        textPrimary: isLight ? '#1A1A1A' : '#FFFFFF',
+        textSecondary: isLight ? '#525252' : '#FFFFFF',
+        bgTooltip: isLight ? 'rgba(255,255,255,0.95)' : 'rgba(0,0,0,0.8)',
+        tooltipBorder: '#7C4DFF',
+        textShadow: isLight ? 'rgba(0,0,0,0.15)' : 'rgba(0,0,0,0.6)',
+        stripeColor: isLight ? 'rgba(0,0,0,0.25)' : 'rgba(255,255,255,0.25)'
+      };
+    }
+    
+    const scoreTotal = 25;
+    const scoreMedal = [19.7, 12.1, 7.2]; // Gold, Silver, Bronze
+    const labels = [
+      'P1-235B-A22B\n+ PhysicsMinions',
+      'Gemini-2.5-Pro','GPT-5','P1-235B-A22B','Gemini-2.5-Flash\n-Thinking',
+      'Claude-4-Sonnet\n-Thinking','Grok-4','P1-30B-A3B','DeepSeek-R1','Qwen3-235B-A22B-\nThinking-2507','GPT-OSS-120B','Kimi-K2-Instruct','o4-mini (high)','Intern-S1','o3','Qwen3-30B-A3B-\nThinking-2507','DeepSeek-V3',
+      'GLM-4.5V','GPT-4o'
+    ];
+    const values = [
+      23.2,
+      22.7, 22.3, 21.22, 20.2,
+      19.0, 18.7, 18.53, 18.5, 17.1, 16.9, 16.5, 16.0, 15.9, 15.7, 15.6, 13.6,
+      11.9, 10.2
+    ];
+
+    // 分类集合
+    const closedSource = new Set(['GPT-5','o3','o4-mini (high)','o4-mini','Gemini-2.5-Pro','Gemini-2.5-Flash-Thinking','Claude-4-Sonnet-Thinking','Grok-4','GPT-4o','Claude-4-Sonnet','Mistral-Medium-3']);
+    const openSourceMLLM = new Set(['GLM-4.5V','Intern-S1','LLaMA4-Scout-17B','Qwen2.5-VL-72B-Instruct','Qwen2.5-VL-32B-Instruct','InternVL3-78B-Instruct','InternVL3-38B-Instruct']);
+    const p1Series = new Set(['P1-235B-A22B','P1-30B-A3B']);
+    const openSourceLLM = new Set(['Qwen3-235B-A22B','Qwen3-235B-A22B-Thinking-2507','Qwen3-30B-A3B','Qwen3-30B-A3B-Thinking-2507','Qwen3-32B','Qwen3-8B','DeepSeek-R1','DeepSeek-V3','GPT-OSS-120B','Kimi-K2-Instruct']);
+
+    // Get theme colors (will be updated dynamically)
+    let colors = getThemeColors();
+
+    function categoryColor(label) {
+      // Always use current colors
+      const currentColors = getThemeColors();
+      if (label === 'P1-235B-A22B\n+ PhysicsMinions') return currentColors.purpleMain;
+      if (p1Series.has(label)) return currentColors.purpleMain;
+      if (closedSource.has(label)) return currentColors.grayDark;
+      if (openSourceMLLM.has(label)) return currentColors.grayMid;
+      if (openSourceLLM.has(label)) return currentColors.grayMid;
+      return currentColors.grayDark;
+    }
+
+    // 判断是否为 P1 系列（覆盖包含换行的 solver 标签）
+    function isP1Label(label) {
+      return typeof label === 'string' && label.startsWith('P1-');
+    }
+
+    // 规范化标签（去掉换行）用于集合匹配
+    const normalize = (s) => (typeof s === 'string' ? s.replace(/\n/g, '') : s);
+    const closedSourceNorm = new Set(Array.from(closedSource).map(normalize));
+    const openSourceMLLMNorm = new Set(Array.from(openSourceMLLM).map(normalize));
+    const openSourceLLMNorm = new Set(Array.from(openSourceLLM).map(normalize));
+    function isClosedLabel(label) {
+      const key = normalize(label);
+      return closedSourceNorm.has(key);
+    }
+    function isOpenLabel(label) {
+      const key = normalize(label);
+      return openSourceMLLMNorm.has(key) || openSourceLLMNorm.has(key) || isP1Label(label);
+    }
+
+    // 根据分数返回奖牌颜色（非 P1）
+    function medalColorFor(value) {
+      if (value >= scoreMedal[0]) return colors.goldColor;
+      if (value >= scoreMedal[1]) return colors.silverColor;
+      if (value >= scoreMedal[2]) return colors.bronzeColor;
+      return null;
+    }
+
+    // 关闭源模型的条纹样式（ECharts decal）
+    function getStripeDecal() {
+      return {
+        symbol: 'rect',
+        dashArrayX: [1, 0],
+        dashArrayY: [4, 3],
+        rotation: Math.PI / 4,
+        color: colors.stripeColor
+      };
+    }
+
+    function createDataArray() {
+      const currentColors = getThemeColors();
+      return labels.map((lb, i) => {
+        const isSolver = lb === 'P1-235B-A22B\n+ PhysicsMinions';
+        const isP1 = isP1Label(lb);
+        const val = values[i];
+        const medalColor = medalColorFor(val);
+        const baseColor = categoryColor(lb);
+        const applyStripe = !isP1 && isClosedLabel(lb);
+        
+        // Determine label color based on medal thresholds
+        let labelColor = currentColors.textPrimary;
+        // Medal colors - use darker versions for light mode
+        if (val >= scoreMedal[0]) {
+          labelColor = isLightTheme() ? '#B8860B' : '#EAC626E1'; // Darker gold for light mode
+        } else if (val >= scoreMedal[1]) {
+          labelColor = isLightTheme() ? '#808080' : '#C0C0C0'; // Darker silver for light mode
+        } else if (val >= scoreMedal[2]) {
+          labelColor = isLightTheme() ? '#8B4513' : '#CD7F32'; // Darker bronze for light mode
+        } else if (isSolver || isP1) {
+          labelColor = currentColors.purpleMain; // P1 default
+        }
+        
+        return {
+          value: val,
+          itemStyle: {
+            color: baseColor,
+            borderColor: 'transparent',
+            borderWidth: 0,
+            decal: null,
+            decal: applyStripe ? getStripeDecal() : null,
+            borderRadius: [3, 3, 0, 0],
+            opacity: 1
+          },
+          label: {
+            show: true,
+            position: 'top',
+            color: labelColor,
+            fontSize: 15,
+            fontWeight: 'bold',
+            formatter: ({ value }) => value.toFixed(1)
+          }
+        };
+      });
+    }
+    
+    const data = createDataArray();
+
+    // Wait for DOM to be ready
+    let chart;
+    
+    function initChart() {
+      const chartElement = document.getElementById('chart');
+      if (!chartElement) {
+        console.error('Chart element not found');
+        return;
+      }
+      
+      chart = echarts.init(chartElement);
+      if (!chart) {
+        console.error('Failed to initialize chart');
+        return;
+      }
+      
+      // Recreate option with current theme colors
+      colors = getThemeColors();
+      const data = createDataArray();
+      option.series[0].data = data;
+      option.xAxis.axisLabel.color = colors.textPrimary;
+      option.xAxis.axisLabel.rich.bold.color = colors.purpleMain;
+      option.xAxis.axisLine.lineStyle.color = colors.textPrimary;
+      option.xAxis.axisTick.lineStyle.color = colors.textPrimary;
+      option.yAxis.axisLabel.color = colors.textPrimary;
+      option.yAxis.axisLine.lineStyle.color = colors.textPrimary;
+      option.tooltip.backgroundColor = colors.bgTooltip;
+      option.tooltip.textStyle.color = colors.textPrimary;
+      
+      // Update markLine colors
+      const medalColorsDark = ['#EAC626E1', '#C0C0C0', '#CD7F32'];
+      const medalColorsLight = ['#B8860B', '#808080', '#8B4513'];
+      option.series[0].markLine.data.forEach((markLine, i) => {
+        if (markLine.label) {
+          markLine.label.color = isLightTheme() ? medalColorsLight[i] : medalColorsDark[i];
+        }
+        if (markLine.lineStyle) {
+          markLine.lineStyle.color = isLightTheme() ? medalColorsLight[i] : medalColorsDark[i];
+        }
+      });
+      
+      chart.setOption(option);
+      
+      // Initialize legend and title colors
+      updateLegend();
+      const titleEl = document.querySelector('.title');
+      if (titleEl) {
+        titleEl.style.color = colors.textPrimary;
+      }
+    }
+    
+    function updateChartColors() {
+      if (!chart) return;
+      colors = getThemeColors();
+      const option = chart.getOption();
+      
+      // Update colors
+      option.xAxis[0].axisLabel.color = colors.textPrimary;
+      option.xAxis[0].axisLabel.rich.bold.color = colors.purpleMain;
+      option.xAxis[0].axisLine.lineStyle.color = colors.textPrimary;
+      option.xAxis[0].axisTick.lineStyle.color = colors.textPrimary;
+      option.yAxis[0].axisLabel.color = colors.textPrimary;
+      option.yAxis[0].axisLine.lineStyle.color = colors.textPrimary;
+      option.tooltip[0].backgroundColor = colors.bgTooltip;
+      option.tooltip[0].textStyle.color = colors.textPrimary;
+      
+      // Update markLine label and line colors
+      if (option.series[0].markLine && option.series[0].markLine.data) {
+        const medalColorsDark = ['#EAC626E1', '#C0C0C0', '#CD7F32'];
+        const medalColorsLight = ['#B8860B', '#808080', '#8B4513'];
+        option.series[0].markLine.data.forEach((markLine, i) => {
+          if (markLine.label) {
+            markLine.label.color = isLightTheme() ? medalColorsLight[i] : medalColorsDark[i];
+          }
+          if (markLine.lineStyle) {
+            markLine.lineStyle.color = isLightTheme() ? medalColorsLight[i] : medalColorsDark[i];
+          }
+        });
+      }
+      
+      // Update data colors
+      option.series[0].data.forEach((item, i) => {
+        const label = labels[i];
+        const val = values[i];
+        const isSolver = label === 'P1-235B-A22B\n+ PhysicsMinions';
+        const isP1 = isP1Label(label);
+        const applyStripe = !isP1 && isClosedLabel(label);
+        
+        item.itemStyle.color = categoryColor(label);
+        item.itemStyle.decal = applyStripe ? getStripeDecal() : null;
+        
+        let labelColor = colors.textPrimary;
+        // Medal colors - keep them visible in both themes
+        if (val >= scoreMedal[0]) {
+          labelColor = isLightTheme() ? '#B8860B' : '#EAC626E1'; // Darker gold for light mode
+        } else if (val >= scoreMedal[1]) {
+          labelColor = isLightTheme() ? '#808080' : '#C0C0C0'; // Darker silver for light mode
+        } else if (val >= scoreMedal[2]) {
+          labelColor = isLightTheme() ? '#8B4513' : '#CD7F32'; // Darker bronze for light mode
+        } else if (isSolver || isP1) {
+          labelColor = colors.purpleMain;
+        }
+        
+        item.label.color = labelColor;
+      });
+      
+      chart.setOption(option, true);
+      
+      // Update legend
+      updateLegend();
+      
+      // Update title color
+      const titleEl = document.querySelector('.title');
+      if (titleEl) {
+        titleEl.style.color = colors.textPrimary;
+      }
+      
+      // Update legend text color
+      const legendItems = document.querySelectorAll('.legend-item');
+      legendItems.forEach(item => {
+        item.style.color = colors.textPrimary;
+      });
+    }
+    
+    function updateLegend() {
+      const legendEl = document.getElementById('legend');
+      if (legendEl) {
+        legendEl.innerHTML = `
+          <div class="legend-item"><span class="legend-swatch" style="background:${colors.grayMid}"></span><span>Open-source </span></div>
+          <div class="legend-item"><span class="legend-swatch" style="background: repeating-linear-gradient(45deg, ${colors.stripeColor} 0 3px, rgba(0,0,0,0) 3px 6px), ${colors.grayDark};"></span><span>Closed-source</span></div>
+        `;
+        const legendItems = legendEl.querySelectorAll('.legend-item');
+        legendItems.forEach(item => {
+          item.style.color = colors.textPrimary;
+        });
+      }
+    }
+    
+    const option = {
+      backgroundColor: 'transparent',
+      grid: { left: 80, right: 140, top: 20, bottom: 140 },
+      xAxis: {
+        type: 'category',
+        data: labels,
+        axisLabel: {
+          color: colors.textPrimary,
+          fontSize: 12,
+          rotate: 45,
+          align: 'right',
+          // 将 P1 系列（含 solver）标签加粗
+          formatter: function (value) {
+            return isP1Label(value) ? '{bold|' + value + '}' : value;
+          },
+          rich: {
+            bold: { fontWeight: 'bolder', color: colors.purpleMain, fontSize: 14 }
+          }
+        },
+        axisLine: { lineStyle: { color: colors.textPrimary } },
+        axisTick: { lineStyle: { color: colors.textPrimary } }
+      },
+      yAxis: {
+        type: 'value',
+        min: 0,
+        max: scoreTotal,
+        interval: 5,
+        axisLabel: { color: colors.textPrimary, fontSize: 18 },
+        axisLine: { lineStyle: { color: colors.textPrimary } },
+        splitLine: { show: false }
+      },
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: { type: 'shadow' },
+        backgroundColor: colors.bgTooltip,
+        borderColor: colors.tooltipBorder,
+        textStyle: { color: colors.textPrimary }
+      },
+      series: [
+        {
+          type: 'bar',
+          data,
+          barWidth: '70%',
+          emphasis: { focus: 'series' },
+          z: 10,
+          itemStyle: {
+            borderRadius: [3, 3, 0, 0]
+          },
+          emphasis: {
+            focus: 'series',
+            itemStyle: {
+              opacity: 1
+            }
+          },
+          markLine: {
+            symbol: 'none',
+            label: { show: false },
+            lineStyle: { type: 'dashed', width: 1.8 },
+            data: [
+              { 
+                yAxis: scoreMedal[0], 
+                lineStyle: { color: isLightTheme() ? '#B8860B' : '#EAC626E1' }, 
+                label: { 
+                  show: true, 
+                  position: 'end', 
+                  formatter: 'Gold Medal', 
+                  color: isLightTheme() ? '#B8860B' : '#EAC626E1', 
+                  fontWeight: 'bold', 
+                  fontSize: 17 
+                }, 
+                z: 1 
+              },
+              { 
+                yAxis: scoreMedal[1], 
+                lineStyle: { color: isLightTheme() ? '#808080' : '#C0C0C0' }, 
+                label: { 
+                  show: true, 
+                  position: 'end', 
+                  formatter: 'Silver Medal', 
+                  color: isLightTheme() ? '#808080' : '#C0C0C0', 
+                  fontWeight: 'bold', 
+                  fontSize: 17 
+                }, 
+                z: 1 
+              },
+              { 
+                yAxis: scoreMedal[2], 
+                lineStyle: { color: isLightTheme() ? '#8B4513' : '#CD7F32' }, 
+                label: { 
+                  show: true, 
+                  position: 'end', 
+                  formatter: 'Bronze Medal', 
+                  color: isLightTheme() ? '#8B4513' : '#CD7F32', 
+                  fontWeight: 'bold', 
+                  fontSize: 17 
+                }, 
+                z: 1 
+              }
+            ]
+          }
+        }
+      ],
+      
+    };
+
+    // Initialize chart when DOM and ECharts are ready
+    function waitForECharts() {
+      if (typeof echarts !== 'undefined') {
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', function() {
+            // Small delay to ensure parent theme is accessible
+            setTimeout(initChart, 100);
+          });
+        } else {
+          // Small delay to ensure parent theme is accessible
+          setTimeout(initChart, 100);
+        }
+      } else {
+        setTimeout(waitForECharts, 50);
+      }
+    }
+    
+    waitForECharts();
+
+    // Listen for theme changes from parent via postMessage
+    window.addEventListener('message', function(event) {
+      if (event.data && event.data.type === 'themeChange') {
+        console.log('IPhO Chart - Received theme change:', event.data.theme);
+        setTheme(event.data.theme);
+        updateChartColors();
+      }
+    });
+
+    window.addEventListener('resize', () => {
+      if (chart) {
+        chart.resize();
+      }
+    });
+  </script>
+</body>
+</html>
+
+

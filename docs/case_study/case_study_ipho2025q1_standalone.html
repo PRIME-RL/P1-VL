@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>P1-VL模型案例研究：IPhO 2025 Q1 - Hydrogen and galaxies</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&family=Noto+Serif+SC:wght@400;600;700&display=swap"
+        rel="stylesheet">
+
+    <!-- MathJax for LaTeX rendering -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEscapes: true,
+                processEnvironments: true
+            },
+            options: {
+                skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+            }
+        };
+    </script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            /* Light Theme Colors */
+            --primary-400: #9333EA;
+            --primary-500: #7E22CE;
+            --primary-600: #6B21A8;
+            --primary-700: #581C87;
+
+            /* Light Backgrounds */
+            --bg-page: #F5F5F5;
+            --bg-surface: #FAFAFA;
+            --bg-elevated: #FFFFFF;
+            --bg-card: #FFFFFF;
+
+            /* Text Colors */
+            --text-primary: #18181B;
+            --text-secondary: #52525B;
+            --text-tertiary: #71717A;
+
+            /* Border Colors */
+            --border-subtle: #E4E4E7;
+            --border-medium: #D4D4D8;
+
+            /* Typography */
+            --font-sans: 'Helvetica Neue', Helvetica, Arial, 'Noto Sans SC', sans-serif;
+
+            /* Spacing */
+            --space-xs: 6px;
+            --space-sm: 10px;
+            --space-md: 14px;
+            --space-lg: 18px;
+            --space-xl: 24px;
+            --space-2xl: 32px;
+
+            /* Border Radius */
+            --radius-md: 10px;
+            --radius-lg: 16px;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background: var(--bg-page);
+            color: var(--text-primary);
+            width: 2560px;
+            height: 1440px;
+            overflow: hidden;
+            padding: 40px;
+        }
+
+        .container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .header {
+            text-align: center;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--border-subtle);
+            flex-shrink: 0;
+            height: 80px;
+        }
+
+        .title {
+            font-size: 48px;
+            font-weight: 700;
+            color: var(--primary-400);
+            margin-bottom: 5px;
+        }
+
+        .problem-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 20px 25px;
+            flex: 0 0 22%;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: row;
+            gap: 25px;
+            align-items: flex-start;
+            min-height: 0;
+            overflow-y: auto;
+        }
+
+        .problem-left {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .problem-title {
+            font-size: 28px;
+            font-weight: 600;
+            color: var(--primary-400);
+            margin-bottom: 15px;
+        }
+
+        .problem-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .problem-text-section {
+            flex: 1;
+        }
+
+        .problem-image-section {
+            flex: 0 0 900px;
+            display: flex;
+            flex-direction: row;
+            gap: 25px;
+            align-items: flex-start;
+            justify-content: center;
+        }
+
+        .context-column {
+            flex: 1;
+            font-size: 16px;
+            line-height: 1.35;
+            color: var(--text-secondary);
+        }
+
+        .context-column p {
+            margin: 0 0 4px 0;
+        }
+
+        .context-column strong {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .section-heading {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--primary-400);
+            margin-top: 15px;
+            margin-bottom: 10px;
+        }
+
+        .section-heading:first-child {
+            margin-top: 0;
+        }
+
+        .question-column {
+            display: none;
+        }
+
+        .problem-image {
+            width: 100%;
+            max-width: 100%;
+            height: auto;
+            object-fit: contain;
+            border-radius: 8px;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .image-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            flex-shrink: 0;
+        }
+
+        .image-caption {
+            font-size: 10px;
+            color: var(--text-tertiary);
+            margin-top: 4px;
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        .models-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            flex: 1;
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        .model-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            height: 100%;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .model-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid var(--border-subtle);
+            flex-shrink: 0;
+        }
+
+        .model-name {
+            font-size: 30px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .model-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .answer-evaluation-wrapper {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            flex-shrink: 0;
+            margin-bottom: 8px;
+        }
+
+        .model-score {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 18px;
+            font-weight: 600;
+            padding: 5px 12px;
+            border-radius: 14px;
+        }
+
+        .model-score.perfect {
+            background: rgba(34, 197, 94, 0.2);
+            color: #16A34A;
+        }
+
+        .model-score.partial {
+            background: rgba(251, 191, 36, 0.2);
+            color: #D97706;
+        }
+
+        .model-score.low {
+            background: rgba(239, 68, 68, 0.2);
+            color: #DC2626;
+        }
+
+        .score-icon {
+            width: 30px;
+            height: 30px;
+        }
+
+        .answer-section {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .evaluation-section {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--primary-400);
+            margin-bottom: 4px;
+            flex-shrink: 0;
+        }
+
+        .answer-content {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            overflow: hidden;
+            flex: 1;
+        }
+
+        .answer-item {
+            font-size: 8.5px;
+            line-height: 1.2;
+            color: var(--text-secondary);
+            padding: 3px 5px;
+            background: var(--bg-surface);
+            border-radius: 3px;
+            flex-shrink: 0;
+        }
+
+        .evaluation-criteria {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            overflow: hidden;
+            flex: 1;
+        }
+
+        .solution-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .solution-content {
+            font-size: 8px;
+            line-height: 1.28;
+            color: var(--text-secondary);
+            padding: 6px 8px;
+            background: var(--bg-surface);
+            border-radius: 6px;
+            overflow: hidden;
+            flex: 1;
+            column-count: 2;
+            column-gap: 12px;
+            column-fill: auto;
+        }
+
+        .solution-content p {
+            margin-bottom: 2px;
+        }
+
+        .solution-content strong {
+            color: var(--text-primary);
+        }
+
+        .criterion-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 3px;
+            font-size: 8px;
+            line-height: 1.2;
+            color: var(--text-secondary);
+        }
+
+        /* Individual model card scaling - each card adapts to its content */
+        #model-p1 .answer-item {
+            font-size: 9.2px;
+        }
+
+        #model-p1 .criterion-item {
+            font-size: 15px;
+        }
+
+        #model-p1 .solution-content {
+            font-size: 13.2px;
+            line-height: 1.5;
+        }
+
+        #model-gemini .answer-item {
+            font-size: 12.2px;
+        }
+
+        #model-gemini .criterion-item {
+            font-size: 15px;
+        }
+
+        #model-gemini .solution-content {
+            font-size: 10px;
+            line-height: 1.4;
+        }
+
+        #model-gpt5 .answer-item {
+            font-size: 12.2px;
+        }
+
+        #model-gpt5 .criterion-item {
+            font-size: 15px;
+        }
+
+        #model-gpt5 .solution-content {
+            font-size: 13.5px;
+            line-height: 2.0;
+        }
+
+        .criterion-icon {
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .criterion-icon.correct {
+            color: #16A34A;
+        }
+
+        .criterion-icon.incorrect {
+            color: #DC2626;
+        }
+
+        /* Hide scrollbar */
+        ::-webkit-scrollbar {
+            display: none;
+        }
+
+        * {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1 class="title">P1-VL模型案例研究：IPhO 2025 Q1 - 氢与星系</h1>
+        </div>
+
+        <!-- Problem Section -->
+        <div class="problem-section">
+            <div class="problem-content">
+                <!-- Text Section -->
+                <div class="problem-text-section">
+                    <div class="context-column">
+                        <div class="section-heading">背景</div>
+                        <p>本题旨在研究星系的特殊物理性质，如它们的动力学和结构。特别地，我们将解释如何从内部测量我们星系的质量分布。为此，我们将重点关注氢，它是星系的主要组成部分。</p>
+
+                        <div class="section-heading">D部分 - Tully-Fisher关系和MOND理论</div>
+                        <p>图1中NGC 6946的平坦外部速度曲线是螺旋星系的共同特征，如图4（左）所示。将外部恒定速度值 $v_{c,\infty}$ 作为每个星系测量总质量 $M_{\text{tot}}$
+                            的函数绘制，可以得到一个有趣的相关性，称为Tully-Fischer关系，见图4（右）。</p>
+
+                        <div class="section-heading">问题</div>
+                        <p>设质量为 $m$ 的物体在固定质量 $M$ 的引力场中，以半径 $r$ 的圆形轨道运动，速度为 $v_{c,\infty}$。
+                            在MOND理论中，当 $a \ll a_0$ 时，确定Tully-Fischer指数。
+                            使用NGC 6946的数据和/或Tully-Fischer定律，计算 $a_0$ 以证明MOND在正确的区域运行。</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Image Section - Right Column -->
+            <div class="problem-image-section">
+                <div class="image-wrapper" style="flex: 1; max-width: 50%;">
+                    <img src="case/IPhO_2025_1_b_1.png" alt="图1" class="problem-image"
+                        style="width: 100%; max-width: 100%;">
+                    <div class="image-caption">图1 - 星系旋转曲线</div>
+                </div>
+                <div class="image-wrapper" style="flex: 1; max-width: 50%;">
+                    <img src="case/IPhO_2025_1_d_1.png" alt="图2: Tully-Fischer关系" class="problem-image"
+                        style="width: 100%; max-width: 100%;">
+                    <div class="image-caption">图2 - Tully-Fischer关系</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Models Grid -->
+        <div class="models-grid">
+            <!-- P1-VL Model Card -->
+            <div class="model-card" id="model-p1">
+                <div class="model-header">
+                    <div class="model-name">P1-VL</div>
+                    <div class="model-score perfect">
+                        <svg class="score-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7">
+                            </path>
+                        </svg>
+                        <span>0.8 分</span>
+                    </div>
+                </div>
+
+                <div class="model-body">
+                    <!-- Answer and Evaluation Wrapper -->
+                    <div class="answer-evaluation-wrapper">
+                        <!-- Answer Section -->
+                        <div class="answer-section">
+                            <div class="section-title">答案</div>
+                            <div class="answer-content">
+                                <div class="answer-item">(1) $\gamma_{\text{MOND}} = 4$</div>
+                                <div class="answer-item">(2) $a_0 = \frac{v_{c,\infty}^4}{G M_{\text{tot}}}$</div>
+                                <div class="answer-item">(3) $a_0 = 1.2 \times 10^{-10}$ m/s²</div>
+                            </div>
+                        </div>
+
+                        <!-- Evaluation Section -->
+                        <div class="evaluation-section">
+                            <div class="section-title">评分详情</div>
+                            <div class="evaluation-criteria">
+                                <div class="criterion-item">
+                                    <svg class="criterion-icon correct" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                    <span>考虑假设 $a \ll a_0$ (0.1分)</span>
+                                </div>
+                                <div class="criterion-item">
+                                    <svg class="criterion-icon correct" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                    <span>应用牛顿第二定律并推导 $G \frac{M}{r^2} m = m \frac{a^2}{a_0}$ (0.1分)</span>
+                                </div>
+                                <div class="criterion-item">
+                                    <svg class="criterion-icon correct" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                    <span>正确给出 $v_{c,\infty} = (a_0 G M)^{1/4}$ 的表达式 (0.1分)</span>
+                                </div>
+                                <div class="criterion-item">
+                                    <svg class="criterion-icon correct" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                    <span>正确给出 $\gamma_{\text{MOND}} = 4$ 的数值 (0.1分)</span>
+                                </div>
+                                <div class="criterion-item">
+                                    <svg class="criterion-icon correct" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                    <span>正确给出 $\log_{10}(v_{c,\infty} / {1 \mathrm{km/s}}) = 2.2$ 的数值 (0.1分)</span>
+                                </div>
+                                <div class="criterion-item">
+                                    <svg class="criterion-icon correct" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                    <span>正确给出 $\log_{10}(M_{\text{tot}} / M_{\odot}) = 10.5$ 的数值 (0.1分)</span>
+                                </div>
+                                <div class="criterion-item">
+                                    <svg class="criterion-icon correct" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                    <span>正确给出 $a_0 = \frac{v_{c,\infty}^4}{G M_{\text{tot}}}$ 的表达式 (0.1分)</span>
+                                </div>
+                                <div class="criterion-item">
+                                    <svg class="criterion-icon correct" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                    <span>正确给出 $a_0$ 在 $[10^{-10.5}, 10^{-9.5}]$ 范围内的数值 (0.1分)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Solution Section -->
+                    <div class="solution-section">
+                        <div class="section-title">完整解答</div>
+                        <div class="solution-content">
+                            <p>为了解决这个问题，我们研究MOND理论对Tully-Fischer关系的含义，并根据给定数据推导必要的表达式和数值。</p>
+
+                            <p><strong>(1) MOND理论下的Tully-Fischer指数</strong></p>
+                            <p>在MOND理论中，引力通过修正的第二定律与加速度相关：</p>
+                            <p>$$F = m \mu\left(\frac{a}{a_0}\right) a,$$</p>
+                            <p>其中 $\mu(x) = \frac{x}{1+x}$，$a_0$ 是临界加速度。在深MOND区域（$a \ll a_0$），$\mu(a/a_0) \approx
+                                a/a_0$，得到：</p>
+                            <p>$$F = \frac{m a^2}{a_0}.$$</p>
+                            <p>对于圆形轨道，向心加速度为 $a = v^2 / r$，引力为 $F = G M m / r^2$。令两者相等：</p>
+                            <p>$$\frac{G M m}{r^2} = \frac{m (v^2 / r)^2}{a_0} \Rightarrow G M = \frac{v^4}{a_0}.$$</p>
+                            <p>求解 $M$，我们得到：</p>
+                            <p>$$M = \frac{v^4}{G a_0}.$$</p>
+                            <p>这意味着总质量 $M$ 与旋转速度 $v$ 的四次方成正比。因此，Tully-Fischer指数为：</p>
+                            <p>$$\boxed{4}$$</p>
+
+                            <p><strong>(2) $a_0$ 的表达式</strong></p>
+                            <p>从深MOND区域圆形运动的MOND分析中，我们推导出关系：</p>
+                            <p>$$M = \frac{v_{c,\infty}^4}{G a_0}.$$</p>
+                            <p>求解 $a_0$，临界加速度的表达式为：</p>
+                            <p>$$\boxed{a_0 = \frac{v_{c,\infty}^4}{G M_{\text{tot}}}}$$</p>
+
+                            <p><strong>(3) $a_0$ 的数值</strong></p>
+                            <p>使用NGC 6946的观测值：$v_{c,\infty} = 1.5 \times 10^5 \, \text{m/s}$，$M_{\text{tot}} \approx 6.3
+                                \times 10^{40} \, \text{kg}$，$G = 6.67 \times 10^{-11} \, \text{m}^3 \text{kg}^{-1}
+                                \text{s}^{-2}$，我们计算：</p>
+                            <p>$$a_0 = \frac{(1.5 \times 10^5)^4}{6.67 \times 10^{-11} \times 6.3 \times 10^{40}}
+                                \approx 1.2 \times 10^{-10} \, \text{m/s}^2.$$</p>
+                            <p>$$\boxed{1.2 \times 10^{-10}}$$</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gemini-3-Pro Model Card -->
+            <div class="model-card" id="model-gemini">
+                <div class="model-header">
+                    <div class="model-name">Gemini-3-Pro</div>
+                    <div class="model-score partial">
+                        <svg class="score-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                            </path>
+                        </svg>
+                        <span>0.5 分</span>
+                    </div>
+                </div>
+
+                <div class="model-body">
+                    <!-- Answer and Evaluation Wrapper -->
+                    <div class="answer-evaluation-wrapper">
+                        <!-- Answer Section -->
+                        <div class="answer-section">
+                            <div class="section-title">答案</div>
+                            <div class="answer-content">
+                                <div class="answer-item">(1) $\gamma_{\text{MOND}} = 4$</div>
+                                <div class="answer-item">(2) $a_0 = \frac{v_{c,\infty}^4}{GM}$</div>
+                                <div class="answer-item">(3) $a_0 = 3.8 \times 10^{-9}$ m/s²</div>
+                            </div>
+                        </div>
+
+                        <!-- Evaluation Section -->
+                        <div class="evaluation-section">
+                            <div class="section-title">评分详情</div>
+                            <div class="evaluation-criteria">
+                                <div class="criterion-item">
+                                    <svg class="criterion-icon correct" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                    <span>考虑假设 $a \ll a_0$ (0.1分)</span>
+                                </div>
+                                <div class="criterion-item">
+                                    <svg class="criterion-icon correct" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                    <span>应用牛顿第二定律并推导 $G \frac{M}{r^2} m = m \frac{a^2}{a_0}$ (0.1分)</span>
+                                </div>
+                                <div class="criterion-item">
+                                    <svg class="criterion-icon correct" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                    <span>正确给出 $v_{c,\infty} = (a_0 G M)^{1/4}$ 的表达式 (0.1分)</span>
+                                </div>
+                                <div class="criterion-item">
+                                    <svg class="criterion-icon correct" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                    <span>正确给出 $\gamma_{\text{MOND}} = 4$ 的数值 (0.1分)</span>
+                                </div>
+                                <div class="criterion-item">
+                                    <svg class="criterion-icon incorrect" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                    <span>正确给出 $\log_{10}(v_{c,\infty} / {1 \mathrm{km/s}}) = 2.2$ 的数值 (0分)</span>
+                                </div>
+                                <div class="criterion-item">
+                                    <svg class="criterion-icon incorrect" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                    <span>正确给出 $\log_{10}(M_{\text{tot}} / M_{\odot}) = 10.5$ 的数值 (0分)</span>
+                                </div>
+                                <div class="criterion-item">
+                                    <svg class="criterion-icon correct" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                    <span>正确给出 $a_0 = \frac{v_{c,\infty}^4}{G M_{\text{tot}}}$ 的表达式 (0.1分)</span>
+                                </div>
+                                <div class="criterion-item">
+                                    <svg class="criterion-icon incorrect" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                    <span>正确给出 $a_0$ 在 $[10^{-10.5}, 10^{-9.5}]$ 范围内的数值 (0分)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Solution Section -->
+                    <div class="solution-section">
+                        <div class="section-title">完整解答</div>
+                        <div class="solution-content">
+                            <p><strong>(1) Tully-Fisher指数 $\gamma_{\text{MOND}}$ 的确定：</strong></p>
+                            <p>考虑质量为 $m$ 的物体在重子质量为 $M$ 的星系周围，以半径 $r$ 的圆形轨道运动。牛顿引力为 $F_N =
+                                \frac{GMm}{r^2}$。根据MOND理论，在低加速度区域（$a \ll a_0$），力被修正为 $F_N = m \mu(\frac{a}{a_0}) a$。当 $x
+                                \ll 1$ 时，近似 $\mu(x) \approx x$：</p>
+                            <p>$$\frac{GMm}{r^2} = m \left( \frac{a}{a_0} \right) a = \frac{m a^2}{a_0}$$</p>
+                            <p>对于圆形运动，向心加速度为 $a = \frac{v^2}{r}$。将其代入力方程：</p>
+                            <p>$$\frac{GM}{r^2} = \frac{1}{a_0} \left( \frac{v^2}{r} \right)^2 = \frac{v^4}{a_0 r^2}$$
+                            </p>
+                            <p>通过约去 $r^2$ 简化：</p>
+                            <p>$$GM = \frac{v^4}{a_0} \implies M = \frac{1}{G a_0} v^4$$</p>
+                            <p>这与Tully-Fisher关系 $M \propto v^\gamma$ 匹配，指数为：</p>
+                            <p>$$\gamma_{\text{MOND}} = 4$$</p>
+                            <p>$$\boxed{4}$$</p>
+
+                            <p><strong>(2) $a_0$ 的表达式：</strong></p>
+                            <p>从推导的MOND关系 $GM = \frac{v_{c,\infty}^4}{a_0}$，我们可以将 $a_0$ 写为：
+                            </p>
+                            <p>$$a_0 = \frac{v_{c,\infty}^4}{GM}$$</p>
+                            <p>$$\boxed{a_0 = \frac{v_{c,\infty}^4}{GM}}$$</p>
+
+                            <p><strong>(3) $a_0$ 的数值：</strong></p>
+                            <p>我们使用图1(B)中在大半径处的数据，例如 $r = 10 \, \mathrm{kpc}$。
+                            </p>
+                            <p>观测速度（平坦部分）：$v_{c,\infty} \approx 165 \, \mathrm{km/s} = 1.65 \times
+                                10^5 \, \mathrm{m/s}$。</p>
+                            <p>预测的牛顿速度（红色曲线）：$v_{\text{pred}} \approx 25 \, \mathrm{km/s} =
+                                2.5 \times 10^4 \, \mathrm{m/s}$。</p>
+                            <p>半径：$r = 10 \, \mathrm{kpc} = 3.09 \times 10^{20} \, \mathrm{m}$。</p>
+                            <p>使用推导的公式，其中 $GM = r v_{\text{pred}}^2$：</p>
+                            <p>$$a_0 = \frac{(1.65 \times 10^5)^4}{(3.09 \times 10^{20}) (2.5 \times 10^4)^2} \approx
+                                3.8 \times 10^{-9} \, \mathrm{m/s^2}$$</p>
+                            <p>$$\boxed{3.8 \times 10^{-9}}$$</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GPT-5.2 Model Card -->
+            <div class="model-card" id="model-gpt5">
+                <div class="model-header">
+                    <div class="model-name">GPT-5.2</div>
+                    <div class="model-score partial">
+                        <svg class="score-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                            </path>
+                        </svg>
+                        <span>0.5 分</span>
+                    </div>
+                </div>
+
+                <div class="model-body">
+                    <!-- Answer and Evaluation Wrapper -->
+                    <div class="answer-evaluation-wrapper">
+                        <!-- Answer Section -->
+                        <div class="answer-section">
+                            <div class="section-title">答案</div>
+                            <div class="answer-content">
+                                <div class="answer-item">(1) $\gamma_{\text{MOND}} = 4$</div>
+                                <div class="answer-item">(2) $a_0 = \frac{v_{c,\infty}^2}{R}$</div>
+                                <div class="answer-item">(3) $a_0 = 1.0 \times 10^{-10}$ m/s²</div>
+                            </div>
+                        </div>
+
+                        <!-- Evaluation Section -->
+                        <div class="evaluation-section">
+                            <div class="section-title">评分详情</div>
+                            <div class="evaluation-criteria">
+                                <div class="criterion-item">
+                                    <svg class="criterion-icon correct" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                    <span>考虑假设 $a \ll a_0$ (0.1分)</span>
+                                </div>
+                                <div class="criterion-item">
+                                    <svg class="criterion-icon correct" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                    <span>应用牛顿第二定律并推导 $G \frac{M}{r^2} m = m \frac{a^2}{a_0}$ (0.1分)</span>
+                                </div>
+                                <div class="criterion-item">
+                                    <svg class="criterion-icon correct" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                    <span>正确给出 $v_{c,\infty} = (a_0 G M)^{1/4}$ 的表达式 (0.1分)</span>
+                                </div>
+                                <div class="criterion-item">
+                                    <svg class="criterion-icon correct" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                    <span>正确给出 $\gamma_{\text{MOND}} = 4$ 的数值 (0.1分)</span>
+                                </div>
+                                <div class="criterion-item">
+                                    <svg class="criterion-icon incorrect" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                    <span>正确给出 $\log_{10}(v_{c,\infty} / {1 \mathrm{km/s}}) = 2.2$ 的数值 (0分)</span>
+                                </div>
+                                <div class="criterion-item">
+                                    <svg class="criterion-icon incorrect" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                    <span>正确给出 $\log_{10}(M_{\text{tot}} / M_{\odot}) = 10.5$ 的数值 (0分)</span>
+                                </div>
+                                <div class="criterion-item">
+                                    <svg class="criterion-icon incorrect" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                    <span>正确给出 $a_0 = \frac{v_{c,\infty}^4}{G M_{\text{tot}}}$ 的表达式 (0分)</span>
+                                </div>
+                                <div class="criterion-item">
+                                    <svg class="criterion-icon correct" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                    <span>正确给出 $a_0$ 在 $[10^{-10.5}, 10^{-9.5}]$ 范围内的数值 (0.1分)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Solution Section -->
+                    <div class="solution-section">
+                        <div class="section-title">完整解答</div>
+                        <div class="solution-content">
+                            <p>在MOND理论中，对于非常低的加速度（$a \ll a_0$），插值函数近似为 $\mu(x) \approx x$，其中 $x = a/a_0$。牛顿第二定律 $\vec{F}
+                                = m \mu(a/a_0) \vec{a}$ 变为：</p>
+                            <p>$$F = m \frac{a}{a_0} a = \frac{m a^2}{a_0}$$</p>
+                            <p>对于质量为 $m$ 的物体，在半径为 $r$、速度为 $v$ 的圆形轨道上，加速度为 $a = v^2/r$。引力为 $F = \frac{G M
+                                m}{r^2}$。将这些代入修正定律：</p>
+                            <p>$$\frac{G M m}{r^2} = \frac{m}{a_0} \left( \frac{v^2}{r} \right)^2 = \frac{m v^4}{a_0
+                                r^2}$$</p>
+                            <p>通过约去 $m$ 和 $r^2$ 简化：</p>
+                            <p>$$G M = \frac{v^4}{a_0} \implies M = \frac{1}{G a_0} v^4$$</p>
+                            <p>Tully-Fisher关系的形式为 $M \propto v^\gamma$。比较两者，我们找到指数：</p>
+                            <p>$$\gamma_{\text{MOND}} = 4$$</p>
+                            <p>$$\boxed{\gamma_{\text{MOND}} = 4}$$</p>
+
+                            <p>基于使用星系在光学半径处的运动学数据的估计：</p>
+                            <p>$$\boxed{a_0 = \frac{v_{c,\infty}^2}{R}}$$</p>
+
+                            <p>使用值 $v_{c,\infty} = 170 \, \text{km/s}$ 和 $R = 9 \, \text{kpc}$：</p>
+                            <p>$$a_0 = \frac{(170 \times 10^3)^2}{9 \times 3.09 \times 10^{19}} \approx 1.04 \times
+                                10^{-10} \, \text{m/s}^2$$</p>
+                            <p>四舍五入到两位有效数字：</p>
+                            <p>$$\boxed{1.0 \times 10^{-10}}$$</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

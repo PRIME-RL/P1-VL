@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FrontierScience-Olympiad Benchmark</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
+      overflow: hidden;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding: 24px;
+      box-sizing: border-box;
+      height: auto;
+      align-items: center;
+    }
+    .title {
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: 0.2px;
+      text-align: center;
+    }
+    #chart {
+      width: 100%;
+      max-width: 1200px;
+      height: 340px;
+      background: transparent;
+      border-radius: 8px;
+    }
+    .legend {
+      display: flex;
+      gap: 24px;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 18px;
+      opacity: 0.9;
+    }
+    .score-gradient {
+      display: flex;
+      height: 16px;
+      border-radius: 3px;
+      overflow: hidden;
+      margin: 0 8px;
+    }
+    .score-gradient-item {
+      flex: 1;
+      min-width: 24px;
+      height: 16px;
+    }
+    .legend-swatch {
+      width: 24px;
+      height: 16px;
+      border-radius: 3px;
+      border: 1px solid rgba(255,255,255,0.3);
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <div class="title">FrontierScience-Olympiad Benchmark</div>
+    <div id="legend" class="legend"></div>
+    <div id="chart"></div>
+  </div>
+
+  <script>
+    let currentTheme = 'dark';
+
+    function getTheme() { return currentTheme; }
+    function setTheme(theme) { currentTheme = theme; }
+    function isLightTheme() { return currentTheme === 'light'; }
+
+    function getThemeColors() {
+      const isLight = isLightTheme();
+      return {
+        textPrimary: isLight ? '#1A1A1A' : '#FFFFFF',
+        bgTooltip: isLight ? 'rgba(255,255,255,0.95)' : 'rgba(0,0,0,0.8)',
+        tooltipBorder: '#7C4DFF',
+        redMain: '#FF6B6B',
+        purpleMain: '#BA8FFF',
+        stripeColor: isLight ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.3)'
+      };
+    }
+
+    // 分数段 40, 50, 60, 70 对应的颜色（低→高：橙→黄）
+    const SCORE_STOPS = [40, 50, 60, 70];
+    const COLOR_AT_40 = '#E85D04';
+    const COLOR_AT_50 = '#F48C06';
+    const COLOR_AT_60 = '#FFB347';
+    const COLOR_AT_70 = '#F0D040';
+
+    function hexToRgb(hex) {
+      hex = hex.replace('#', '');
+      return [
+        parseInt(hex.slice(0, 2), 16),
+        parseInt(hex.slice(2, 4), 16),
+        parseInt(hex.slice(4, 6), 16)
+      ];
+    }
+
+    function rgbToHex(r, g, b) {
+      return '#' + [r, g, b].map(x => Math.round(x).toString(16).padStart(2, '0')).join('');
+    }
+
+    function lerpColor(hexA, hexB, t) {
+      const a = hexToRgb(hexA);
+      const b = hexToRgb(hexB);
+      const r = a[0] + (b[0] - a[0]) * t;
+      const g = a[1] + (b[1] - a[1]) * t;
+      const bl = a[2] + (b[2] - a[2]) * t;
+      return rgbToHex(r, g, bl);
+    }
+
+    function scoreToColor(score) {
+      if (score <= SCORE_STOPS[0]) return COLOR_AT_40;
+      if (score >= SCORE_STOPS[3]) return COLOR_AT_70;
+      if (score <= SCORE_STOPS[1]) {
+        const t = (score - SCORE_STOPS[0]) / (SCORE_STOPS[1] - SCORE_STOPS[0]);
+        return lerpColor(COLOR_AT_40, COLOR_AT_50, t);
+      }
+      if (score <= SCORE_STOPS[2]) {
+        const t = (score - SCORE_STOPS[1]) / (SCORE_STOPS[2] - SCORE_STOPS[1]);
+        return lerpColor(COLOR_AT_50, COLOR_AT_60, t);
+      }
+      const t = (score - SCORE_STOPS[2]) / (SCORE_STOPS[3] - SCORE_STOPS[2]);
+      return lerpColor(COLOR_AT_60, COLOR_AT_70, t);
+    }
+
+    // 数据 - 按 Total 从高到低排序
+    const rawData = [
+      { label: 'GPT-5.2', value: 77.1 },
+      { label: 'Gemini-3-Pro', value: 76.1 },
+      { label: 'Claude-Opus-4.5', value: 71.4 },
+      { label: 'GPT-5.1', value: 70 },
+      { label: 'GPT-5', value: 69.7 },
+      { label: 'P1-VL-235B-A22B+\nPhysicsMinions', value: 67.1 },
+      { label: 'Grok-4', value: 66.2 },
+      { label: 'DeepSeek-V3.2-Reasoner', value: 65.9 },
+      { label: 'P1-235B-A22B+\nPhysicsMinions', value: 65.4 },
+      { label: 'Kimi-k2-thinking', value: 65.1 },
+      { label: 'GLM-4.7', value: 65 },
+      { label: 'P1-VL-235B-A22B', value: 64.3 },
+      { label: 'o3', value: 62.9 },
+      { label: 'P1-235B-A22B', value: 62 },
+      { label: 'o4-mini', value: 61.7 },
+      { label: 'P1-30B-A3B+\nPhysicsMinions', value: 56.9 },
+      { label: 'Qwen3-VL-235B-\nA22B-Thinking', value: 56.3 },
+      { label: 'Qwen3-235B-A22B-\nThinking-2507', value: 54.5 },
+      { label: 'P1-30B-A3B', value: 54.4 },
+      { label: 'P1-VL-30B-A3B', value: 52.5 },
+      { label: 'GPT-OSS-120B (high)', value: 60.0 },
+      { label: 'Qwen3-VL-30B-A3B-\nThinking-2507', value: 43.4 },
+      { label: 'Qwen3-30B-A3B-\nThinking-2507', value: 42.8 }
+    ].sort((a, b) => b.value - a.value);
+
+    const labels = rawData.map(d => d.label);
+    const values = rawData.map(d => d.value);
+
+    const p1Models = new Set([
+      'P1-VL-235B-A22B+\nPhysicsMinions', 'P1-235B-A22B+\nPhysicsMinions', 'P1-VL-235B-A22B', 'P1-235B-A22B',
+      'P1-30B-A3B+\nPhysicsMinions', 'P1-30B-A3B', 'P1-VL-30B-A3B'
+    ]);
+    const p1VlPhysicsMinions = new Set(['P1-VL-235B-A22B+PhysicsMinions']);
+    const p1VlOnly = new Set(['P1-VL-235B-A22B', 'P1-VL-30B-A3B']);
+    const closedSource = new Set([
+      'GPT-5.2', 'Gemini-3-Pro', 'Claude-Opus-4.5', 'GPT-5.1', 'GPT-5',
+      'Grok-4', 'o3', 'o4-mini', 'Kimi-k2-thinking', 'GLM-4.7'
+    ]);
+    const normalize = (s) => s.replace(/\s/g, '').replace(/-/g, '');
+    const p1Norm = new Set(Array.from(p1Models).map(normalize));
+    const p1VlPmNorm = new Set(Array.from(p1VlPhysicsMinions).map(normalize));
+    const p1VlOnlyNorm = new Set(Array.from(p1VlOnly).map(normalize));
+    const closedSourceNorm = new Set(Array.from(closedSource).map(normalize));
+    function isP1Label(label) { return p1Norm.has(normalize(label)); }
+    function isP1VlPhysicsMinions(label) { return p1VlPmNorm.has(normalize(label)); }
+    function isP1VlOnly(label) { return p1VlOnlyNorm.has(normalize(label)); }
+    function isClosedSource(label) { return closedSourceNorm.has(normalize(label)); }
+
+    function getStripeDecal() {
+      const colors = getThemeColors();
+      return {
+        symbol: 'rect',
+        dashArrayX: [1, 0],
+        dashArrayY: [4, 3],
+        rotation: Math.PI / 4,
+        color: colors.stripeColor
+      };
+    }
+
+    let colors = getThemeColors();
+
+    function createDataArray() {
+      const currentColors = getThemeColors();
+      return labels.map((lb, i) => {
+        const val = values[i];
+        const barColor = scoreToColor(val);
+        const isP1 = isP1Label(lb);
+        const isRed = isP1VlPhysicsMinions(lb);
+        const isPurple = isP1VlOnly(lb);
+        const isClosed = isClosedSource(lb);
+        const applyStripe = isClosed && !isRed && !isPurple;
+        let borderColor = 'transparent';
+        let borderWidth = 0;
+        if (isRed) {
+          borderColor = currentColors.redMain;
+          borderWidth = 4;
+        } else if (isPurple) {
+          borderColor = currentColors.purpleMain;
+          borderWidth = 4;
+        }
+        let labelColor = currentColors.textPrimary;
+        if (isRed) labelColor = currentColors.redMain;
+        else if (isPurple) labelColor = currentColors.purpleMain;
+        return {
+          value: val,
+          itemStyle: {
+            color: barColor,
+            borderColor: borderColor,
+            borderWidth: borderWidth,
+            decal: applyStripe ? getStripeDecal() : null,
+            borderRadius: [3, 3, 0, 0]
+          },
+          label: {
+            show: true,
+            position: 'top',
+            color: labelColor,
+            fontSize: 12,
+            fontWeight: isP1 ? 'bold' : 'normal',
+            formatter: ({ value }) => value.toFixed(1)
+          }
+        };
+      });
+    }
+
+    let chart;
+
+    function initChart() {
+      const chartElement = document.getElementById('chart');
+      if (!chartElement) return;
+
+      chart = echarts.init(chartElement);
+      colors = getThemeColors();
+      const data = createDataArray();
+
+      const option = {
+        backgroundColor: 'transparent',
+        grid: { left: 80, right: 30, top: 30, bottom: 120 },
+        xAxis: {
+          type: 'category',
+          data: labels,
+          axisLabel: {
+            color: colors.textPrimary,
+            fontSize: 12,
+            rotate: 45,
+            align: 'right',
+            interval: 0,
+            formatter: function (value) {
+              const norm = normalize(value);
+              if (p1VlPmNorm.has(norm)) return '{red|' + value + '}';
+              if (p1VlOnlyNorm.has(norm)) return '{purple|' + value + '}';
+              return value;
+            },
+            rich: {
+              purple: { fontWeight: 'bold', color: colors.purpleMain, fontSize: 12 },
+              red: { fontWeight: 'bold', color: colors.redMain, fontSize: 12 }
+            }
+          },
+          axisLine: { lineStyle: { color: colors.textPrimary, width: 2 } },
+          axisTick: { lineStyle: { color: colors.textPrimary } }
+        },
+        yAxis: {
+          type: 'value',
+          min: 40,
+          max: 80,
+          interval: 10,
+          name: 'Total / 100',
+          nameLocation: 'middle',
+          nameGap: 50,
+          nameTextStyle: { color: colors.textPrimary, fontSize: 16 },
+          axisLabel: { color: colors.textPrimary, fontSize: 14 },
+          axisLine: { lineStyle: { color: colors.textPrimary, width: 2 } },
+          splitLine: {
+            show: true,
+            lineStyle: {
+              type: 'dashed',
+              color: isLightTheme() ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)'
+            }
+          }
+        },
+        tooltip: {
+          trigger: 'axis',
+          axisPointer: { type: 'shadow' },
+          backgroundColor: colors.bgTooltip,
+          borderColor: colors.tooltipBorder,
+          textStyle: { color: colors.textPrimary },
+          formatter: function (params) {
+            const d = params[0];
+            return `<strong>${d.name}</strong><br/>Total: ${d.value.toFixed(1)} / 100`;
+          }
+        },
+        series: [{
+          type: 'bar',
+          data: data,
+          barWidth: '65%',
+          emphasis: { focus: 'series' }
+        }]
+      };
+
+      chart.setOption(option);
+      updateLegend();
+
+      const titleEl = document.querySelector('.title');
+      if (titleEl) titleEl.style.color = colors.textPrimary;
+    }
+
+    function updateLegend() {
+      const legendEl = document.getElementById('legend');
+      if (!legendEl) return;
+      const stripeColor = colors.stripeColor || (isLightTheme() ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.3)');
+      const sampleColor = lerpColor(COLOR_AT_50, COLOR_AT_60, 0.5);
+
+      // 渐变条从 70（左/黄）到 40（右/橙）
+      let gradientHtml = '';
+      gradientHtml += `<div class="score-gradient-item" style="background:${COLOR_AT_70}"></div>`;
+      gradientHtml += `<div class="score-gradient-item" style="background:${lerpColor(COLOR_AT_60, COLOR_AT_70, 0.5)}"></div>`;
+      gradientHtml += `<div class="score-gradient-item" style="background:${COLOR_AT_60}"></div>`;
+      gradientHtml += `<div class="score-gradient-item" style="background:${lerpColor(COLOR_AT_50, COLOR_AT_60, 0.5)}"></div>`;
+      gradientHtml += `<div class="score-gradient-item" style="background:${COLOR_AT_50}"></div>`;
+      gradientHtml += `<div class="score-gradient-item" style="background:${lerpColor(COLOR_AT_40, COLOR_AT_50, 0.5)}"></div>`;
+      gradientHtml += `<div class="score-gradient-item" style="background:${COLOR_AT_40}"></div>`;
+
+      legendEl.innerHTML = `
+        <div class="legend-item">
+          <span class="legend-swatch" style="background:${sampleColor}"></span>
+          <span>Open-source</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-swatch" style="background: repeating-linear-gradient(45deg, ${stripeColor} 0 2px, ${sampleColor} 2px 4px);"></span>
+          <span>Closed-source</span>
+        </div>
+        <div class="legend-item">
+          <span>Score</span>
+          <span>80</span>
+          <div class="score-gradient">${gradientHtml}</div>
+          <span>40</span>
+        </div>
+      `;
+
+      legendEl.querySelectorAll('.legend-item').forEach(item => {
+        item.style.color = colors.textPrimary;
+      });
+    }
+
+    function updateChartColors() {
+      if (!chart) return;
+      colors = getThemeColors();
+
+      const option = chart.getOption();
+      option.xAxis[0].axisLabel.color = colors.textPrimary;
+      option.xAxis[0].axisLabel.rich.purple.color = colors.purpleMain;
+      option.xAxis[0].axisLabel.rich.red.color = colors.redMain;
+      option.xAxis[0].axisLine.lineStyle.color = colors.textPrimary;
+      option.yAxis[0].axisLabel.color = colors.textPrimary;
+      option.yAxis[0].axisLine.lineStyle.color = colors.textPrimary;
+      option.yAxis[0].nameTextStyle.color = colors.textPrimary;
+      option.yAxis[0].splitLine.lineStyle.color = isLightTheme() ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)';
+      option.tooltip[0].backgroundColor = colors.bgTooltip;
+      option.tooltip[0].textStyle.color = colors.textPrimary;
+
+      option.series[0].data = createDataArray();
+      chart.setOption(option, true);
+
+      updateLegend();
+      const titleEl = document.querySelector('.title');
+      if (titleEl) titleEl.style.color = colors.textPrimary;
+    }
+
+    function waitForECharts() {
+      if (typeof echarts !== 'undefined') {
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', () => setTimeout(initChart, 100));
+        } else {
+          setTimeout(initChart, 100);
+        }
+      } else {
+        setTimeout(waitForECharts, 50);
+      }
+    }
+
+    waitForECharts();
+
+    window.addEventListener('message', function (event) {
+      if (event.data && event.data.type === 'themeChange') {
+        setTheme(event.data.theme);
+        updateChartColors();
+      }
+    });
+
+    window.addEventListener('resize', () => { if (chart) chart.resize(); });
+  </script>
+</body>
+</html>

@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intern-S1模型案例研究：IPhO 2024 Q3 - Black Widow Pulsar</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&family=Noto+Serif+SC:wght@400;600;700&display=swap"
+        rel="stylesheet">
+
+    <!-- MathJax for LaTeX rendering -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEscapes: true,
+                processEnvironments: true
+            },
+            options: {
+                skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+            }
+        };
+    </script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            /* Light Theme Colors */
+            --primary-400: #9333EA;
+            --primary-500: #7E22CE;
+            --primary-600: #6B21A8;
+            --primary-700: #581C87;
+
+            /* Light Backgrounds */
+            --bg-page: #F5F5F5;
+            --bg-surface: #FAFAFA;
+            --bg-elevated: #FFFFFF;
+            --bg-card: #FFFFFF;
+
+            /* Text Colors */
+            --text-primary: #18181B;
+            --text-secondary: #52525B;
+            --text-tertiary: #71717A;
+
+            /* Border Colors */
+            --border-subtle: #E4E4E7;
+            --border-medium: #D4D4D8;
+
+            /* Typography */
+            --font-sans: 'Helvetica Neue', Helvetica, Arial, 'Noto Sans SC', sans-serif;
+
+            /* Spacing */
+            --space-xs: 6px;
+            --space-sm: 10px;
+            --space-md: 14px;
+            --space-lg: 18px;
+            --space-xl: 24px;
+            --space-2xl: 32px;
+
+            /* Border Radius */
+            --radius-md: 10px;
+            --radius-lg: 16px;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background: var(--bg-page);
+            color: var(--text-primary);
+            width: 2560px;
+            height: 1440px;
+            overflow: hidden;
+            padding: 40px;
+        }
+
+        .container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .header {
+            text-align: center;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--border-subtle);
+            flex-shrink: 0;
+            height: 80px;
+        }
+
+        .title {
+            font-size: 48px;
+            font-weight: 700;
+            color: var(--primary-400);
+            margin-bottom: 5px;
+        }
+
+        .problem-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 20px 25px;
+            flex: 0 0 22%;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: row;
+            gap: 25px;
+            align-items: flex-start;
+            min-height: 0;
+            overflow-y: auto;
+        }
+
+        .problem-left {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .problem-title {
+            font-size: 28px;
+            font-weight: 600;
+            color: var(--primary-400);
+            margin-bottom: 15px;
+        }
+
+        .problem-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .problem-text-section {
+            flex: 1;
+        }
+
+        .problem-image-section {
+            flex: 0 0 900px;
+            display: flex;
+            flex-direction: row;
+            gap: 25px;
+            align-items: flex-start;
+            justify-content: center;
+        }
+
+        .context-column {
+            flex: 1;
+            font-size: 16px;
+            line-height: 1.35;
+            color: var(--text-secondary);
+        }
+
+        .context-column p {
+            margin: 0 0 4px 0;
+        }
+
+        .context-column strong {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .section-heading {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--primary-400);
+            margin-top: 15px;
+            margin-bottom: 10px;
+        }
+
+        .section-heading:first-child {
+            margin-top: 0;
+        }
+
+        .question-column {
+            display: none;
+        }
+
+        .problem-image {
+            width: 100%;
+            max-width: 100%;
+            height: auto;
+            object-fit: contain;
+            border-radius: 8px;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .image-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            flex-shrink: 0;
+        }
+
+        .image-caption {
+            font-size: 10px;
+            color: var(--text-tertiary);
+            margin-top: 4px;
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        .models-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            flex: 1;
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        .model-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            height: 100%;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .model-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid var(--border-subtle);
+            flex-shrink: 0;
+        }
+
+        .model-name {
+            font-size: 30px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .model-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .answer-evaluation-wrapper {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            flex-shrink: 0;
+            margin-bottom: 8px;
+        }
+
+        .model-score {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 18px;
+            font-weight: 600;
+            padding: 5px 12px;
+            border-radius: 14px;
+        }
+
+        .model-score.perfect {
+            background: rgba(34, 197, 94, 0.2);
+            color: #16A34A;
+        }
+
+        .model-score.partial {
+            background: rgba(251, 191, 36, 0.2);
+            color: #D97706;
+        }
+
+        .model-score.low {
+            background: rgba(239, 68, 68, 0.2);
+            color: #DC2626;
+        }
+
+        .score-icon {
+            width: 30px;
+            height: 30px;
+        }
+
+        .answer-section {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .evaluation-section {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--primary-400);
+            margin-bottom: 4px;
+            flex-shrink: 0;
+        }
+
+        .answer-content {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            overflow: hidden;
+            flex: 1;
+        }
+
+        .answer-item {
+            font-size: 8.5px;
+            line-height: 1.2;
+            color: var(--text-secondary);
+            padding: 3px 5px;
+            background: var(--bg-surface);
+            border-radius: 3px;
+            flex-shrink: 0;
+        }
+
+        .evaluation-criteria {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            overflow: hidden;
+            flex: 1;
+        }
+
+        .solution-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .solution-content {
+            font-size: 8px;
+            line-height: 1.28;
+            color: var(--text-secondary);
+            padding: 6px 8px;
+            background: var(--bg-surface);
+            border-radius: 6px;
+            overflow: hidden;
+            flex: 1;
+            column-count: 2;
+            column-gap: 12px;
+            column-fill: auto;
+        }
+
+        .solution-content p {
+            margin-bottom: 2px;
+        }
+
+        .solution-content strong {
+            color: var(--text-primary);
+        }
+
+        .criterion-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 3px;
+            font-size: 8px;
+            line-height: 1.2;
+            color: var(--text-secondary);
+        }
+
+        /* Individual model card scaling - each card adapts to its content */
+        #model-p1 .answer-item {
+            font-size: 9.2px;
+        }
+
+        #model-p1 .criterion-item {
+            font-size: 15px;
+        }
+
+        #model-p1 .solution-content {
+            font-size: 13.2px;
+            line-height: 1.5;
+        }
+
+        #model-gemini .answer-item {
+            font-size: 12.2px;
+        }
+
+        #model-gemini .criterion-item {
+            font-size: 15px;
+        }
+
+        #model-gemini .solution-content {
+            font-size: 10px;
+            line-height: 1.4;
+        }
+
+        #model-gpt5 .answer-item {
+            font-size: 12.2px;
+        }
+
+        #model-gpt5 .criterion-item {
+            font-size: 15px;
+        }
+
+        #model-gpt5 .solution-content {
+            font-size: 13.5px;
+            line-height: 2.0;
+        }
+
+        .criterion-icon {
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .criterion-icon.correct {
+            color: #16A34A;
+        }
+
+        .criterion-icon.incorrect {
+            color: #DC2626;
+        }
+
+        /* Hide scrollbar */
+        ::-webkit-scrollbar {
+            display: none;
+        }
+
+        * {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1 class="title">P1-VL模型案例研究：IPhO 2024 Q3 - Black Widow Pulsar</h1>
+        </div>
+
+        <!-- Problem Section -->
+        <div class="problem-section">
+            <div class="problem-content">
+                <!-- Text Section -->
+                <div class="problem-text-section">
+                    <div class="context-column">
+                        <div class="section-heading">背景</div>
+                        <p>大量观测到的恒星是双星系统。其中一颗或两颗可能是高速旋转并发射电磁波的中子星，称为脉冲星。有时伴星是一团膨胀的气体，逐渐落到中子星上并使其质量增加（图1-a）。中子星逐渐吞噬伴星的一部分质量，因此被比作黑寡妇蜘蛛（或红背蜘蛛），雌性蜘蛛在交配后会吃掉配偶。落到黑寡妇上的气体加热产生的辐射可以被观测到。最重的中子星通常是黑寡妇，它们作为测试基础物理的自然实验室。
+                        </p>
+
+                        <p><strong>分析：</strong>在本部分我们研究单颗恒星的稳定性。考虑一颗包含特定物质的恒星，其状态方程为 $p = K\rho^\gamma$，其中 $K$ 和
+                            $\gamma$ 是常数。设 $p(r)$ 和 $\rho(r)$ 分别是距离恒星中心 $r$ 处的压力和密度。恒星中心的压力和密度分别为 $p_c$ 和 $\rho_c$。</p>
+
+                        <div class="section-heading">问题</div>
+                        <p>假设对于某颗特定恒星，$\frac{du}{dx}$ 作为 $x$ 的函数由图2中的曲线给出。</p>
+                        <p><strong>要求：</strong>使用图2中曲线在 $x = 0$ 附近的行为，求 $\gamma$ 的值（保留3位有效数字）。必要时可使用给定的标尺。</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Image Section - Right Column -->
+            <div class="problem-image-section">
+                <div class="image-wrapper" style="flex: 1.5; max-width: 58%;">
+                    <img src="case/IPhO_2024_3_B.png" alt="图1" class="problem-image"
+                        style="width: 100%; max-width: 100%;">
+                    <div class="image-caption">图1 - (a) 伴星气体落到中子星上 - (b) 中子星PSR J2215+5135的伴星</div>
+                </div>
+                <div class="image-wrapper" style="flex: 1; max-width: 35%;">
+                    <img src="case/IPhO_2024_3_B_6.png" alt="图2: du/dx的曲线图" class="problem-image"
+                        style="width: 100%; max-width: 100%;">
+                    <div class="image-caption">图2 - $\frac{du}{dx}$ 的曲线图</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Models Grid -->
+        <div class="models-grid">
+            <!-- Intern-S1 Model Card -->
+            <div class="model-card" id="model-p1">
+                <div class="model-header">
+                    <div class="model-name">P1-VL</div>
+                    <div class="model-score perfect">
+                        <svg class="score-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span>0.8 分</span>
+                    </div>
+                </div>
+
+                <div class="model-body">
+                    <!-- Answer and Evaluation Wrapper -->
+                    <div class="answer-evaluation-wrapper">
+                        <!-- Answer Section -->
+                        <div class="answer-section">
+                            <div class="section-title">答案</div>
+                            <div class="answer-content">
+                                <div class="answer-item">$\gamma = 1.67$</div>
+                            </div>
+                        </div>
+
+                        <!-- Evaluation Section -->
+                        <div class="evaluation-section">
+                            <div class="section-title">评分详情</div>
+                            <div class="evaluation-criteria">
+                                <div class="criterion-item">
+                                    <svg class="criterion-icon correct" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                    <span>$u^{\prime} = 0$ (0.1分)</span>
+                                </div>
+                                <div class="criterion-item">
+                                    <svg class="criterion-icon correct" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                    <span>$\lim_{x \rightarrow 0} \frac{u^{\prime}(x)}{x} = u^{\prime \prime}(0)$
+                                        (0.4分)</span>
+                                </div>
+                                <div class="criterion-item">
+                                    <svg class="criterion-icon correct" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                    <span>$\gamma = -\frac{4 \pi}{3 u^{\prime \prime}(0)}$ (0.2分)</span>
+                                </div>
+                                <div class="criterion-item">
+                                    <svg class="criterion-icon correct" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                    <span>$\gamma$ 值在 $[1.64, 1.70]$ 范围内 (0.1分)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Solution Section -->
+                    <div class="solution-section">
+                        <div class="section-title">完整解答</div>
+                        <div class="solution-content">
+                            <p>为确定绝热指数 $\gamma$ 的值，我们考虑图2中提供的函数 $\frac{du}{dx}$ 在 $x = 0$ 附近的行为。关键思想是将 $\frac{du}{dx}$ 在
+                                $x = 0$ 处的局部斜率与使用恒星结构原理的状态方程 $p = K \rho^\gamma$ 联系起来。</p>
+
+                            <p><strong>变量的物理解释</strong></p>
+                            <p>假设 $x$ 是无量纲半径变量，$u$ 是无量纲密度变量，定义为：</p>
+                            <p>$$\nu(x) = \frac{\rho(r)}{\rho_c}$$</p>
+                            <p>其中 $r$ 是物理半径，$\rho_c$ 是中心密度。假设恒星处于流体静力学平衡状态，并遵循多方状态方程：</p>
+                            <p>$$p = K \rho^\gamma$$</p>
+                            <p>这对应于多方指数 $n$，使得 $\gamma = 1 + \frac{1}{n}$，或等价地 $n = \frac{1}{\gamma - 1}$。</p>
+
+                            <p><strong>中心附近的行为</strong></p>
+                            <p>在恒星中心附近（$x \to 0$），密度分布可以展开为：</p>
+                            <p>$$\nu(x) \approx 1 - \frac{n}{6} x^2$$</p>
+                            <p>对 $x$ 求导：</p>
+                            <p>$$\frac{du}{dx} \approx -\frac{n}{3} x$$</p>
+                            <p>这意味着 $\frac{du}{dx}$ 相对于 $x$ 的曲线在 $x = 0$ 处的<strong>斜率</strong>为：</p>
+                            <p>$$\left. \frac{d^2 u}{dx^2} \right|_{x=0} = -\frac{n}{3}$$</p>
+                            <p>由于 $n = \frac{1}{\gamma - 1}$，代入得到：</p>
+                            <p>$$\left. \frac{d^2 u}{dx^2} \right|_{x=0} = -\frac{1}{3(\gamma - 1)}$$</p>
+                            <p>设 $S$ 表示该斜率（即 $\frac{d^2 u}{dx^2}$ 在 $x = 0$ 处的值）。则：</p>
+                            <p>$$S = -\frac{1}{3(\gamma - 1)} \quad \Rightarrow \quad \gamma = 1 + \frac{1}{-3S}$$</p>
+
+                            <p><strong>从图中提取斜率</strong></p>
+                            <p>根据图2的描述：</p>
+                            <ul>
+                                <li>在 $x = 0$ 处，曲线通过 $\frac{du}{dx} = 0$。</li>
+                                <li>当 $x$ 从0增加时，曲线向下倾斜（即 $\frac{du}{dx}$ 变为负值）。</li>
+                                <li>在 $x = 0$ 附近，曲线近似为线性。</li>
+                            </ul>
+                            <p>假设 $\frac{du}{dx}$ 相对于 $x$ 在 $x = 0$ 处的<strong>斜率</strong>测量为 $S =
+                                -0.50$。这是基于恒星结构问题中此类曲线典型行为的合理估计，它对应于多方模型中的已知情况。</p>
+
+                            <p><strong>计算 $\gamma$</strong></p>
+                            <p>将 $S = -0.50$ 代入公式：</p>
+                            <p>$$\gamma = 1 + \frac{1}{-3(-0.50)} = 1 + \frac{1}{1.50} = 1 + 0.666\ldots = 1.666\ldots$$
+                            </p>
+                            <p>四舍五入到<strong>三位有效数字</strong>，得到：</p>
+                            <p>$$\gamma \approx 1.67$$</p>
+
+                            <p><strong>结论</strong></p>
+                            <p>$\frac{du}{dx}$ 在 $x = 0$ 附近的行为，特别是曲线的斜率，通过从流体静力学平衡和状态方程导出的关系直接与多方指数 $\gamma$
+                                相关。使用从图2观察到的斜率，我们推导出 $\gamma$ 的值。</p>
+                            <p>$\boxed{1.67}$</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gemini-3-Pro Model Card -->
+            <div class="model-card" id="model-gemini">
+                <div class="model-header">
+                    <div class="model-name">Gemini-3-Pro</div>
+                    <div class="model-score low">
+                        <svg class="score-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                            </path>
+                        </svg>
+                        <span>0.1 分</span>
+                    </div>
+                </div>
+
+                <div class="model-body">
+                    <!-- Answer and Evaluation Wrapper -->
+                    <div class="answer-evaluation-wrapper">
+                        <!-- Answer Section -->
+                        <div class="answer-section">
+                            <div class="section-title">答案</div>
+                            <div class="answer-content">
+                                <div class="answer-item">$\gamma = 1.20$</div>
+                            </div>
+                        </div>
+
+                        <!-- Evaluation Section -->
+                        <div class="evaluation-section">
+                            <div class="section-title">评分详情</div>
+                            <div class="evaluation-criteria">
+                                <div class="criterion-item">
+                                    <svg class="criterion-icon correct" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                    <span>$u^{\prime} = 0$ (0.1分)</span>
+                                </div>
+                                <div class="criterion-item">
+                                    <svg class="criterion-icon incorrect" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                    <span>$\lim_{x \rightarrow 0} \frac{u^{\prime}(x)}{x} = u^{\prime \prime}(0)$
+                                        (0分)</span>
+                                </div>
+                                <div class="criterion-item">
+                                    <svg class="criterion-icon incorrect" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                    <span>$\gamma = -\frac{4 \pi}{3 u^{\prime \prime}(0)}$ (0分)</span>
+                                </div>
+                                <div class="criterion-item">
+                                    <svg class="criterion-icon incorrect" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                    <span>$\gamma$ 值不在 $[1.64, 1.70]$ 范围内 (0分)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Solution Section -->
+                    <div class="solution-section">
+                        <div class="section-title">完整解答</div>
+                        <div class="solution-content">
+                            <p>为找到 $\gamma$ 的值，我们分析图2中给出的 $\frac{du}{dx}$ 相对于 $x$ 的图在 $x=0$ 附近的情况。</p>
+
+                            <p><strong>1. 识别变量和标准方程：</strong></p>
+                            <p>问题描述了一颗具有多方状态方程 $p = K \rho^{\gamma}$ 的恒星。这对应于指数为 $n$ 的多方体，其中 $\gamma = 1 + \frac{1}{n}$。
+                            </p>
+                            <p>这种恒星的结构由无量纲密度函数 $\theta(\xi)$ 的Lane-Emden方程控制。标准变量定义为：</p>
+                            <p>$$\rho = \rho_c \theta^n$$</p>
+                            <p>$$r = \alpha \xi$$</p>
+                            <p>其中 $\alpha$ 是长度尺度，通常定义为 $\alpha = \sqrt{\frac{(n+1)K\rho_c^{1/n-1}}{4\pi G}}$。</p>
+                            <p>函数 $\theta(\xi)$ 满足Lane-Emden方程：</p>
+                            <p>$$\frac{1}{\xi^2} \frac{d}{d\xi} \left( \xi^2 \frac{d\theta}{d\xi} \right) = -\theta^n$$
+                            </p>
+                            <p>边界条件为 $\theta(0) = 1$ 和 $\theta'(0) = 0$。</p>
+                            <p>在中心附近（$\xi = 0$），$\theta(\xi)$ 的级数展开为：</p>
+                            <p>$$\theta(\xi) \approx 1 - \frac{1}{6}\xi^2$$</p>
+
+                            <p><strong>2. 基于图分析变量 $u$：</strong></p>
+                            <p>图显示了 $\frac{du}{dx}$ 作为 $x$ 的函数。</p>
+                            <ul>
+                                <li>在 $x=0$ 处，$\frac{du}{dx} = 0$。</li>
+                                <li>在 $x=0$ 附近，曲线是一条负斜率的直线。查看网格：
+                                    <ul>
+                                        <li>在 $x=0.2$ 处，曲线通过 $y = -0.4$。</li>
+                                        <li>斜率为 $m = \frac{-0.4 - 0}{0.2 - 0} = -2$。</li>
+                                        <li>因此，对于小的 $x$，$\frac{du}{dx} \approx -2x$。</li>
+                                    </ul>
+                                </li>
+                            </ul>
+
+                            <p><strong>3. 将 $u$ 与 $\theta$ 关联：</strong></p>
+                            <p>假设 $x$ 对应于标准无量纲半径 $\xi$（这是此类问题中的典型情况，没有给出缩放因子），我们可以将 $u$ 与物理量关联。</p>
+                            <p>使用展开 $\theta(\xi) \approx 1 - \frac{1}{6}\xi^2$：</p>
+                            <p>$$\frac{d\theta}{d\xi} \approx -\frac{1}{3}\xi$$</p>
+                            <p>如果绘制的变量 $u$ 简单地是 $\theta$，则斜率将为 $-1/3$。由于观察到的斜率是 $-2$，$u$ 必须是 $\theta$ 的函数。</p>
+                            <p>假设 $u = \theta^k$。则：</p>
+                            <p>$$\frac{du}{d\xi} = k \theta^{k-1} \frac{d\theta}{d\xi}$$</p>
+                            <p>在 $\xi=0$ 附近，$\theta \approx 1$，因此：</p>
+                            <p>$$\frac{du}{d\xi} \approx k (1) \left( -\frac{1}{3}\xi \right) = -\frac{k}{3}\xi$$</p>
+                            <p>我们将此斜率等同于观察到的斜率 $-2$：</p>
+                            <p>$$-\frac{k}{3} = -2 \implies k = 6$$</p>
+                            <p>因此，变量 $u$ 表现为 $\theta$ 的6次方。</p>
+
+                            <p><strong>4. 识别物理量：</strong></p>
+                            <p>两个主要物理量是密度 $\rho$ 和压力 $p$。</p>
+                            <ul>
+                                <li><strong>密度：</strong> $\rho \propto \theta^n$。这意味着 $u = \theta^n$，所以 $n=6$。
+                                    <ul>
+                                        <li>如果 $n=6$，$\gamma = 1 + 1/6 \approx 1.167$。</li>
+                                    </ul>
+                                </li>
+                                <li><strong>压力：</strong> $p \propto \rho^{\gamma} \propto (\theta^n)^{1+1/n} =
+                                    \theta^{n+1}$。这意味着 $u = \theta^{n+1}$，所以 $n+1=6 \implies n=5$。
+                                    <ul>
+                                        <li>如果 $n=5$，$\gamma = 1 + 1/5 = 1.2$。</li>
+                                    </ul>
+                                </li>
+                            </ul>
+
+                            <p><strong>5. 选择正确的解：</strong></p>
+                            <p>情况 $n=5$ 对应于"Schuster球"（或Plummer模型），这是Lane-Emden方程的少数解析解之一（$\theta_5(\xi) =
+                                (1+\xi^2/3)^{-1/2}$）。</p>
+                            <p>让我们验证 $n=5$ 情况下压力（$u = P/P_c = \theta^6$）的斜率：</p>
+                            <p>$$u = \left( (1+\xi^2/3)^{-1/2} \right)^6 = (1+\xi^2/3)^{-3}$$</p>
+                            <p>$$\frac{du}{d\xi} = -3(1+\xi^2/3)^{-4} \cdot \frac{2\xi}{3} = -2\xi (1+\xi^2/3)^{-4}$$
+                            </p>
+                            <p>在 $\xi=0$ 附近，$\frac{du}{d\xi} \approx -2\xi$。这与图的斜率完全匹配。</p>
+                            <p>此外，图2中曲线的整体形状（导数先减小然后渐近地回到零）是 $n=5$ 多方体无限范围的特征。有限的 $n$ 模型会显示急剧的截止。</p>
+                            <p>因此，这颗恒星对应于指数 $n=5$ 的多方体。</p>
+
+                            <p><strong>6. 计算 $\gamma$：</strong></p>
+                            <p>$$\gamma = 1 + \frac{1}{n} = 1 + \frac{1}{5} = 1.2$$</p>
+
+                            <p>保留3位有效数字，$\gamma = 1.20$。</p>
+
+                            <p>$\boxed{1.20}$</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GPT-5.2 Model Card -->
+            <div class="model-card" id="model-gpt5">
+                <div class="model-header">
+                    <div class="model-name">GPT-5.2</div>
+                    <div class="model-score partial">
+                        <svg class="score-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                            </path>
+                        </svg>
+                        <span>0.5 分</span>
+                    </div>
+                </div>
+
+                <div class="model-body">
+                    <!-- Answer and Evaluation Wrapper -->
+                    <div class="answer-evaluation-wrapper">
+                        <!-- Answer Section -->
+                        <div class="answer-section">
+                            <div class="section-title">答案</div>
+                            <div class="answer-content">
+                                <div class="answer-item">$\gamma = 1.15$</div>
+                            </div>
+                        </div>
+
+                        <!-- Evaluation Section -->
+                        <div class="evaluation-section">
+                            <div class="section-title">评分详情</div>
+                            <div class="evaluation-criteria">
+                                <div class="criterion-item">
+                                    <svg class="criterion-icon correct" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                    <span>$u^{\prime} = 0$ (0.1分)</span>
+                                </div>
+                                <div class="criterion-item">
+                                    <svg class="criterion-icon correct" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                    <span>$\lim_{x \rightarrow 0} \frac{u^{\prime}(x)}{x} = u^{\prime \prime}(0)$
+                                        (0.4分)</span>
+                                </div>
+                                <div class="criterion-item">
+                                    <svg class="criterion-icon incorrect" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                    <span>$\gamma = -\frac{4 \pi}{3 u^{\prime \prime}(0)}$ (0分)</span>
+                                </div>
+                                <div class="criterion-item">
+                                    <svg class="criterion-icon incorrect" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                    <span>$\gamma$ 值不在 $[1.64, 1.70]$ 范围内 (0分)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Solution Section -->
+                    <div class="solution-section">
+                        <div class="section-title">完整解答</div>
+                        <div class="solution-content">
+                            <p>在恒星中心附近，我们有 $m(r)\approx \frac{4\pi}{3}\rho_c r^{3}$，因此流体静力学平衡方程给出</p>
+                            <p>$$\frac{dp}{dr}=-\frac{Gm(r)\rho(r)}{r^{2}} \approx -\frac{4\pi G}{3}\rho_c^{2} r$$</p>
+                            <p>对于多方状态方程 $p=K\rho^{\gamma}$，</p>
+                            <p>$$\frac{dp}{dr}=K\gamma \rho^{\gamma-1}\frac{d\rho}{dr} \approx K\gamma
+                                \rho_c^{\gamma-1}\frac{d\rho}{dr}$$</p>
+                            <p>因此</p>
+                            <p>$$\frac{d\rho}{dr}\approx -\frac{4\pi G}{3K\gamma}\rho_c^{3-\gamma} r$$</p>
+
+                            <p>使用标准无量纲变量</p>
+                            <p>$$\nu(x)=\frac{\rho(r)}{\rho_c}, \qquad x=\frac{r}{a}, \qquad a^{2}=\frac{K\gamma}{4\pi
+                                G(\gamma-1)}\rho_c^{\gamma-2}$$</p>
+                            <p>在 $x=0$ 附近，我们得到</p>
+                            <p>$$\frac{du}{dx} = \frac{du}{dr}\frac{dr}{dx} = \frac{1}{\rho_c}\frac{d\rho}{dr} a \approx
+                                -\frac{1}{3(\gamma-1)} x$$</p>
+                            <p>因此，$\frac{du}{dx}$ 相对于 $x$ 的图在 $x=0$ 处的斜率为</p>
+                            <p>$$\left.\frac{d}{dx}\Big(\frac{du}{dx}\Big)\right|_{0} = -\frac{1}{3(\gamma-1)}$$</p>
+
+                            <p>从图2在 $x=0$ 附近，曲线近似为线性，例如</p>
+                            <p>$$x\simeq 0.20, \qquad \frac{du}{dx}\simeq -0.45$$</p>
+                            <p>$$\Rightarrow \frac{du/dx}{x}\simeq -2.25$$</p>
+                            <p>因此</p>
+                            <p>$$-\frac{1}{3(\gamma-1)}\simeq -2.25$$</p>
+                            <p>$$\Rightarrow \gamma-1\simeq \frac{1}{6.75}$$</p>
+                            <p>$$\Rightarrow \gamma\simeq 1.148 \approx 1.15 \quad (\text{3位有效数字})$$</p>
+                            <p>$\boxed{1.15}$</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

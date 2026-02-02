@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>P1-VL-30B-A3B VS Qwen3-VL-30B-A3B</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      padding: 0;
+      box-sizing: border-box;
+      align-items: center;
+      width: 100%;
+      height: 100%;
+    }
+    .chart-section {
+      display: flex;
+      flex-direction: column;
+      background: transparent;
+      border-radius: 0;
+      padding: 0;
+      box-shadow: none;
+      width: 100%;
+      height: 100%;
+    }
+    .chart {
+      width: 100%;
+      height: 500px;
+      min-height: 500px;
+      background: transparent;
+      border-radius: 8px;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <div class="chart-section">
+      <div id="chart-30b" class="chart"></div>
+    </div>
+  </div>
+
+  <script>
+    let currentTheme = 'dark';
+    
+    function getTheme() { return currentTheme; }
+    function setTheme(theme) { currentTheme = theme; }
+    function isLightTheme() { return currentTheme === 'light'; }
+    
+    function getThemeColors() {
+      const isLight = isLightTheme();
+      return {
+        purpleMain: '#BA8FFF',      // 紫色 - P1-VL
+        grayMid: isLight ? '#6B7280' : '#4a5057',  // 灰色 - Qwen3-VL
+        textPrimary: isLight ? '#1A1A1A' : '#FFFFFF',
+        textSecondary: isLight ? '#525252' : '#FFFFFF',
+        bgTooltip: isLight ? 'rgba(255,255,255,0.95)' : 'rgba(0,0,0,0.8)',
+        tooltipBorder: '#7C4DFF',
+        splitLine: isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)'
+      };
+    }
+
+    // 数据来自图片
+    const data30B = {
+      benchmarks: ['AIME24', 'AIME25', 'HMMT-Feb', 'HMMT-Nov', 'IMO-Answerbench', 'AMOBench', 'BeyondAIME', 'Brumo', 'CMICC', 'GPQA', 'LiveBench', 'HLE', 'MMMU', 'MMMU-Pro', 'EMMA-Mini', 'MathVista-Mini'],
+      qwen3: [90.0, 83.7, 70.0, 80.8, 60.3, 37.0, 63.8, 83.8, 73.4, 73.1, 71.3, 11.4, 75.5, 62.3, 61.4, 79.2],
+      p1: [90.4, 87.9, 73.3, 85.4, 65.3, 44.5, 65.9, 89.2, 79.1, 76.5, 72.7, 18.6, 73.1, 63.4, 64.8, 79.4]
+    };
+
+    function createChart(elementId, data) {
+      const chartElement = document.getElementById(elementId);
+      const chart = echarts.init(chartElement);
+      let colors = getThemeColors();
+      
+      function updateChartColors() {
+        const currentColors = getThemeColors();
+        const option = chart.getOption();
+        
+        option.title[0].textStyle.color = currentColors.textPrimary;
+        option.legend[0].textStyle.color = currentColors.textPrimary;
+        option.xAxis[0].axisLabel.color = currentColors.textPrimary;
+        option.xAxis[0].axisLine.lineStyle.color = currentColors.textPrimary;
+        option.xAxis[0].axisTick.lineStyle.color = currentColors.textPrimary;
+        option.yAxis[0].axisLabel.color = currentColors.textPrimary;
+        option.yAxis[0].axisLine.lineStyle.color = currentColors.textPrimary;
+        option.yAxis[0].splitLine.lineStyle.color = currentColors.splitLine;
+        option.tooltip[0].backgroundColor = currentColors.bgTooltip;
+        option.tooltip[0].textStyle.color = currentColors.textPrimary;
+        
+        // 更新 series 中的 label 颜色
+        if (option.series && option.series.length > 0) {
+          option.series.forEach(series => {
+            if (series.label) {
+              series.label.color = currentColors.textPrimary;
+            }
+          });
+        }
+        
+        chart.setOption(option, true);
+      }
+      
+      const option = {
+        backgroundColor: 'transparent',
+        title: {
+          text: 'P1-VL-30B-A3B VS Qwen3-VL-30B-A3B-Thinking',
+          left: 'center',
+          top: 10,
+          textStyle: {
+            color: colors.textPrimary,
+            fontSize: 20,
+            fontWeight: 'bold'
+          }
+        },
+        grid: { 
+          left: 60, 
+          right: 30, 
+          top: 100, 
+          bottom: 100,
+          containLabel: false
+        },
+        legend: {
+          show: true,
+          data: ['Qwen3-VL-30B-A3B-Thinking', 'P1-VL-30B-A3B'],
+          top: 45,
+          right: 30,
+          textStyle: {
+            color: colors.textPrimary,
+            fontSize: 14
+          },
+          itemWidth: 20,
+          itemHeight: 14,
+          itemGap: 20
+        },
+        xAxis: {
+          type: 'category',
+          data: data.benchmarks,
+          axisLabel: {
+            color: colors.textPrimary,
+            fontSize: 11,
+            rotate: 35,
+            interval: 0,
+            fontWeight: 500
+          },
+          axisLine: { lineStyle: { color: colors.textPrimary } },
+          axisTick: { lineStyle: { color: colors.textPrimary } }
+        },
+        yAxis: {
+          type: 'value',
+          min: 10,
+          max: 100,
+          interval: 15,
+          axisLabel: { 
+            color: colors.textPrimary, 
+            fontSize: 12,
+            formatter: '{value}.00'
+          },
+          axisLine: { lineStyle: { color: colors.textPrimary } },
+          splitLine: { 
+            show: true,
+            lineStyle: {
+              color: colors.splitLine,
+              type: 'dashed'
+            }
+          }
+        },
+        tooltip: {
+          trigger: 'axis',
+          axisPointer: { type: 'shadow' },
+          backgroundColor: colors.bgTooltip,
+          borderColor: colors.tooltipBorder,
+          textStyle: { color: colors.textPrimary, fontSize: 14 },
+          formatter: function(params) {
+            let result = params[0].axisValueLabel + '<br/>';
+            params.forEach(item => {
+              result += item.marker + ' ' + item.seriesName + ': ' + item.value.toFixed(1) + '<br/>';
+            });
+            return result;
+          }
+        },
+        series: [
+          {
+            name: 'Qwen3-VL-30B-A3B-Thinking',
+            type: 'bar',
+            data: data.qwen3,
+            barWidth: '35%',
+            barGap: '5%',
+            itemStyle: {
+              color: colors.grayMid,
+              borderRadius: [2, 2, 0, 0]
+            },
+            label: {
+              show: true,
+              position: 'top',
+              color: colors.textPrimary,
+              fontSize: 10,
+              fontWeight: 'bold',
+              formatter: function(params) {
+                return params.value.toFixed(1);
+              }
+            },
+            emphasis: { focus: 'series' }
+          },
+          {
+            name: 'P1-VL-30B-A3B',
+            type: 'bar',
+            data: data.p1,
+            barWidth: '35%',
+            itemStyle: {
+              color: colors.purpleMain,
+              borderRadius: [2, 2, 0, 0]
+            },
+            label: {
+              show: true,
+              position: 'top',
+              color: colors.textPrimary,
+              fontSize: 10,
+              fontWeight: 'bold',
+              formatter: function(params) {
+                return params.value.toFixed(1);
+              }
+            },
+            emphasis: { focus: 'series' }
+          }
+        ]
+      };
+
+      chart.setOption(option);
+      
+      window.addEventListener('message', function(event) {
+        if (event.data && event.data.type === 'themeChange') {
+          setTheme(event.data.theme);
+          updateChartColors();
+        }
+      });
+      
+      return chart;
+    }
+
+    const chart30B = createChart('chart-30b', data30B);
+    
+    window.addEventListener('resize', () => {
+      chart30B.resize();
+    });
+  </script>
+</body>
+</html>
