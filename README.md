@@ -85,7 +85,7 @@ Below summarizes the comparative results, illustrating that our models consisten
 | CMICC | 83.1 | 81.6 | 79.1 | 73.4 |
 | GPQA | 81.4 | 77.1 | 76.5 | 73.1 |
 | LiveBench | 79.9 | 79.4 | 72.7 | 71.3 |
-| HLE | 20.0 | 20.7 | 18.6 | 11.4 |
+| HLE | 15.9 | 13.9 | 13.4 | 12.3 |
 | MMMU | 78.0 | 77.2 | 73.6 | 74.8 |
 | MMMU-Pro | 70.2 | 69.7 | 63.4 | 62.3 |
 | EMMA-Mini | 71.3 | 69.6 | 64.8 | 61.4 |
