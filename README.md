@@ -72,7 +72,7 @@ P1-VL models achieve significant gains over their base counterparts across all t
 
 #### STEM Benchmarks
 Below summarizes the comparative results, illustrating that our models consistently surpass their base counterparts across both text-only and multi-modal benchmarks.
-| Benchmark | P1-VL-235B-A22B | Qwen3-235B-A22B-Thinking-2507 | P1-VL-30B-A3B | Qwen3-30B-A3B-Thinking-2507 |
+| Benchmark | P1-VL-235B-A22B | Qwen3-VL-235B-A22B-Thinking | P1-VL-30B-A3B | Qwen3-VL-30B-A3B-Thinking |
 | :--- | :--- | :--- | :--- | :--- |
 | AIME24 | 93.8 | 93.3 | 90.4 | 90.0 |
 | AIME25 | 92.1 | 90.8 | 87.9 | 83.7 |
