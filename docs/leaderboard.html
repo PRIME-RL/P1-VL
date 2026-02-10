@@ -149,7 +149,7 @@
         </table>
       </div>
       <div class="muted" style="margin-top:8px; line-height:1.6"> 
-        1. Cells are color-coded based on official medal thresholds. Models are ranked by Gold ↓, then Silver ↓, then Bronze ↓, with ties broken by IPhO 2025 score ↓.<br>
+        1. Cells are color-coded based on official medal thresholds. Models are ranked by the average score across all 13 Olympiad exams (↓).<br>
         2. Medal cutoffs are derived from the theoretical exam scores of human medalists.<br>
         3. Only the theoretical components of each exam are evaluated; experimental and diagram-drawing problems are excluded, so Full Mark (Model) ≤ Full Mark (Human).<br>
         4. Each model was run 8 times. Problem scores were averaged and summed to compute the final exam score.
@@ -268,9 +268,30 @@
       }
     }
 
+    // ===== Sorting
+    function hiphoComputeAvgScore(model){
+      const cols = hiphoHumanCols();
+      let sum = 0, cnt = 0;
+
+      for(const c of cols){
+        const key = hiphoColKey(c.n, c.y);
+        const box = hiphoCtx[key];
+        const v = box?.scores.get(model);
+        if(typeof v === 'number'){
+          sum += v;
+          cnt += 1;
+        }
+      }
+      return cnt > 0 ? sum / cnt : null;
+    }
+
     function hiphoAttachSortHandlers(){
       document.getElementById('thead').addEventListener('click',(e)=>{
         const th = e.target.closest('th.th-sort'); if(!th) return;
+
+        // ✅ 如果在 meta 行里，直接忽略
+        if (th.closest('tr')?.classList.contains('metahead')) return;
+
         const key = th.dataset.key;
         if(hiphoSortKey === key){ hiphoSortDir = (hiphoSortDir==='desc'?'asc':'desc'); }
         else { hiphoSortKey = key; hiphoSortDir = (key==='model'?'asc':'desc'); }
@@ -278,19 +299,20 @@
       });
     }
 
+
     function hiphoDefaultComparator(a,b){
       if(b.g!==a.g) return b.g-a.g;
       if(b.s!==a.s) return b.s-a.s;
       if(b.b!==a.b) return b.b-a.b;
-      const ka = a.scores[hiphoColKey('IPhO',2025)] ?? -Infinity;
-      const kb = b.scores[hiphoColKey('IPhO',2025)] ?? -Infinity;
-      if(kb!==ka) return kb-ka;
+      const A = (typeof a.avg === 'number') ? a.avg : -Infinity;
+      const B = (typeof b.avg === 'number') ? b.avg : -Infinity;
+      if(B !== A) return B - A;
       return a.model.localeCompare(b.model);
     }
 
     function hiphoValueComparator(a,b,key){
-      const va = key==='gold'?a.g:key==='silver'?a.s:key==='bronze'?a.b:key==='model'?a.model:b.scores[key];
-      const vb = key==='gold'?b.g:key==='silver'?b.s:key==='bronze'?b.b:key==='model'?b.model:a.scores[key];
+      const va = key==='avg'?a.avg:key==='gold'?a.g:key==='silver'?a.s:key==='bronze'?a.b:key==='model'?a.model:a.scores[key];
+      const vb = key==='avg'?b.avg:key==='gold'?b.g:key==='silver'?b.s:key==='bronze'?b.b:key==='model'?b.model:b.scores[key];
       if(key==='model') return hiphoSortDir==='asc'?String(va).localeCompare(String(vb)):String(vb).localeCompare(String(va));
       const A = (typeof va==='number')?va:-Infinity;
       const B = (typeof vb==='number')?vb:-Infinity;
@@ -307,6 +329,7 @@
         + `<th class="th-sort ${hiphoSortKey==='model'?hiphoSortDir:''} left sticky-left" data-key="model">
             <div class="th-inner">Model<span class="arrow">▾</span></div>
           </th>`
+        + make('Avg','avg')
         + make('🥇','gold') + make('🥈','silver') + make('🥉','bronze');
       for (const c of cols){
         html += make(`${c.n}<br>${c.y}`, hiphoColKey(c.n,c.y));
@@ -324,7 +347,7 @@
       for (const r of rows){
         html += `<tr class="metahead">
                   <th class="left sticky-left">${r.name}</th>
-                  <th class="center">—</th><th class="center">—</th><th class="center">—</th>`;
+                  <th class="center">—</th><th class="center">—</th><th class="center">—</th><th class="center">—</th>`;
         for (const c of cols){
           const box = hiphoCtx[hiphoColKey(c.n,c.y)];
           const val = r.type==='thr' ? box?.thr?.[r.key] : box?.meta?.[r.key];
@@ -361,7 +384,8 @@
         const cat = hiphoCategories[m];
         if(selectedHiphoCats.size>0 && !selectedHiphoCats.has(cat)) continue;
         const {g,s,b} = hiphoComputeMedals(m);
-        const record = {model:m,g,s,b,scores:{}};
+        const avg = hiphoComputeAvgScore(m);
+        const record = {model:m,avg,g,s,b,scores:{}};
         for(const c of cols){
           const key = hiphoColKey(c.n,c.y); const box = hiphoCtx[key];
           record.scores[key] = box?.scores.get(m);
@@ -374,6 +398,7 @@
       const tb = [];
       for(const r of data){
         let tr = `<tr><td class="left"><span class="chip ${catClassHipho(r.model)}">${r.model}</span></td>`+
+                 `<td class="center">${r.avg==null ? '—' : r.avg.toFixed(1)}</td>`+
                 `<td class="center">${r.g}</td><td class="center">${r.s}</td><td class="center">${r.b}</td>`;
         for(const c of cols){
           const key = hiphoColKey(c.n,c.y); const box = hiphoCtx[key]; const val = r.scores[key];
