@@ -1790,24 +1790,24 @@
             data-i18n-en="Co-Evolution Multi-Agent System: PhysicsMinions">协同进化的多智能体系统：PhysicsMinions</h3>
 
         <p data-i18n="pm.p1"
-           data-i18n-zh="为了突破单模型的极限，研究团队开发了 <strong>PhysicsMinions</strong>，这是一个专为物理推理设计的<strong>协同进化多智能体系统</strong>。它由三个交互式模块组成，通过自我验证与反思迭代，实现了物理推理能力的跃升："
-           data-i18n-en="To push beyond single-model limits, the team developed <strong>PhysicsMinions</strong>, a <strong>co-evolution multi-agent system</strong> for physics reasoning. It has three interactive modules that iterate via self-verification and reflection, boosting reasoning capabilities:"></p>
+			data-i18n-zh="为了突破单模型推理的局限, P1-VL 引入了 <strong>PhysicsMinions</strong>：这是一个协同进化的多模态多智能体系统。它通过结构化感知、双阶段验证和迭代优化，显著增强了推理能力："
+			data-i18n-en="To overcome the limitations of single-model inference, **P1-VL** is augmented with **PhysicsMinions**, a coevolutionary multimodal multi-agent system that enhances test-time reasoning through structured perception, dual-stage verification, and iterative refinement."></p>
 
         <ul>
             <li data-i18n="pm.li1"
-                data-i18n-zh="<strong>视觉模块（Visual Studio）</strong> – 观察和验证多模态问题，提取结构化的视觉信息（在P1模型实验中未使用视觉模块）。"
-                data-i18n-en="<strong>Visual Studio</strong> – Observes and verifies multimodal problems, extracting structured visual information (not used in P1 experiments)."></li>
+				data-i18n-zh="<strong>视觉模块 (Visual Studio)</strong> – 执行结构化视觉感知，通过观察、验证并将图表或图像细化为符号表示（在无视觉输入时为可选）。"
+				data-i18n-en="<strong>Visual Studio</strong> – Performs structured visual perception by observing, validating, and refining diagrams or plots into symbolic representations (optional when no visual input is present)."></li>
             <li data-i18n="pm.li2"
-                data-i18n-zh="<strong>逻辑模块（Logic Studio）</strong> – 生成初始解决方案，并通过自我改进和自我反思逐步改进解答。"
-                data-i18n-en="<strong>Logic Studio</strong> – Generates initial solutions and iteratively improves them via self-improvement and self-reflection."></li>
+				data-i18n-zh="<strong>逻辑模块 (Logic Studio)</strong> – 生成初始解决方案，并通过自我反思和针对性修订进行迭代改进。"
+				data-i18n-en="<strong>Logic Studio</strong> – Generates an initial solution and iteratively improves it via self-reflection and targeted revision."></li>
             <li data-i18n="pm.li3"
-                data-i18n-zh="<strong>审核模块（Review Studio）</strong> – 执行双阶段验证：<strong>物理验证器</strong>检查物理一致性（比如常数、单位），而<strong>通用验证器</strong>检查逻辑、推理和计算。"
-                data-i18n-en="<strong>Review Studio</strong> – Performs two-stage verification: a <strong>physics validator</strong> checks physical consistency (constants, units), and a <strong>general validator</strong> checks logic, reasoning, and calculations."></li>
+				data-i18n-zh="<strong>审核模块 (Review Studio)</strong> – 执行<strong>双阶段验证</strong>：由“领域验证器”（如物理验证器）检查科学一致性，以及“通用验证器”核对逻辑连贯性、推导过程和数值准确性。"
+				data-i18n-en="<strong>Review Studio</strong>Performs **dual-stage verification** with two dedicated verifiers: a Domain-Verifier (e.g., Physics-Verifier) that checks scientific consistency, and a General-Verifier that validates logical coherence, derivations, and numerical correctness."></li>
         </ul>
 
         <p data-i18n="pm.p2"
-           data-i18n-zh="如果任一阶段验证失败，详细的错误报告会被发送回逻辑模块，进行反思修订解答。通过这种<strong>协同进化协作</strong>，PhysicsMinions 持续提升复杂物理问题的推理质量和性能。"
-           data-i18n-en="If any stage fails verification, a detailed error report is sent back to the logic module for reflective revision. Through this <strong>co-evolutionary collaboration</strong>, PhysicsMinions continually improves reasoning quality and performance on complex physics problems."></p>
+			data-i18n-zh="除了物理奥赛任务，PhysicsMinions 还能自然扩展至<strong>更广泛的科学场景</strong>。通过动态选择领域特定的验证器和解题提示词，该智能体框架在保持统一协同进化结构的同时，支持物理、化学和生物等各类异构问题。"
+			data-i18n-en="Beyond physics Olympiad tasks, PhysicsMinions naturally extends to **broader scientific scenarios**. By dynamically selecting domain-specific verifiers and solver prompts, the agentic framework supports heterogeneous problems in physics, chemistry, and biology while maintaining a unified coevolutionary structure."></p>
 
         <p data-i18n="pm.more"
            data-i18n-zh="更多细节请参见论文："
