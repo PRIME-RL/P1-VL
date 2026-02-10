@@ -47,7 +47,7 @@ P1-VL models achieve significant gains over their base counterparts across all t
 | GPT-5 | 35.5 | 81.5 | 67.0 | 69.7 |
 | **P1-VL-235B-A22B+PhysicsMinions** | 26.3 | 77.2 | 67.3 | 67.1 |
 | Grok-4 | 33.0 | 73.2 | 67.2 | 66.2 |
-| DeepSeek-V3.2-Reasoner | 26.3 | 74.1 | 67.3 | 65.9 |
+| DeepSeek-V3.2-Thinking | 26.3 | 74.1 | 67.3 | 65.9 |
 | P1-235B-A22B+PhysicsMinions | 30.0 | 71.0 | 68.0 | 65.4 |
 | Kimi-K2-Thinking | 20.0 | 76.6 | 65.0 | 65.1 |
 | GLM-4.7 | 20.0 | 70.6 | 69.5 | 65.0 |
@@ -62,7 +62,7 @@ P1-VL models achieve significant gains over their base counterparts across all t
 | **P1-VL-30B-A3B** | 20.0 | 58.8 | 54.0 | 52.5 |
 | Qwen3-VL-30B-A3B-Thinking	|18.8 |	49.4 |	43.5 |	43.4 |
 | Qwen3-30B-A3B-Thinking-2507 | 10.0 | 47.8 | 45.3 | 42.8 |
-| OpenAI o1 | 20.0 | 50.9 | 40.3 | 42.5 |
+| o1 | 20.0 | 50.9 | 40.3 | 42.5 |
 | GPT-4o | 3.0 | 12.4 | 14.1 | 12.3 |
 
 <!-- *Evaluation results on the FrontierScience-Olympiad benchmark. The state-of-the-art performance of all the models is marked in bold, and that of open-source models is underlined.* -->
