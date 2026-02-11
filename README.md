@@ -1,6 +1,6 @@
 # P1-VL: Bridging Visual Perception and Scientific Reasoning in Physics Olympiads
 
-<!-- [![Paper](https://img.shields.io/badge/Paper-A42C25?style=for-the-badge&logo=arxiv&logoColor=white)](https://arxiv.org/abs/2511.13612) -->
+[![Paper](https://img.shields.io/badge/Paper-A42C25?style=for-the-badge&logo=arxiv&logoColor=white)](https://arxiv.org/abs/2602.09443)
 [![Blog](https://img.shields.io/badge/Blog-P1--VL-0D1117?style=for-the-badge&logo=githubpages&logoColor=white)](https://prime-rl.github.io/P1-VL/)
 [![P1-VL-30B-A3B](https://img.shields.io/badge/Hugging%20Face-P1--VL--30B--A3B-FCD022?style=for-the-badge&logo=huggingface)](https://huggingface.co/PRIME-RL/P1-VL-30B-A3B)
 [![P1-VL-235B_A22B](https://img.shields.io/badge/Hugging%20Face-P1--VL--235B--A22B-FCD022?style=for-the-badge&logo=huggingface)](https://huggingface.co/PRIME-RL/P1-VL-235B-A22B)
@@ -144,6 +144,6 @@ If you find this work useful, please cite:
 @misc{p1vl2025,
   title={P1-VL: Bridging Visual Perception and Scientific Reasoning in Physics Olympiads},
   author={P1 Team},
-  year={2025},
-  url={https://prime-rl.github.io/P1-VL/}
+  year={2026},
+  url={https://arxiv.org/abs/2602.09443}
 }
